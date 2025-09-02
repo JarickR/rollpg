@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://fi7b144lcvk6"]
+
+[ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1_qv0at"]
+
+[node name="GameRoot" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_qv0at")
+ButtonsPath = NodePath("Buttons")
+LogBoxPath = NodePath("LogBox")
+
+[node name="Buttons" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="LogBox" type="TextEdit" parent="."]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+editable = false
