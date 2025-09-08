@@ -5,82 +5,106 @@ using DiceArena.Engine;
 
 namespace DiceArena.GodotUI
 {
-	/// <summary>
-	/// Visual card for an Enemy. Call Bind(enemy) once, then Refresh() when stats change.
-	/// </summary>
-	public partial class EnemyCard : PanelContainer
+	public partial class EnemyCard : Panel
 	{
-		// Bound data
 		public Enemy Data { get; private set; } = default!;
 
-		// UI
 		private VBoxContainer _root = default!;
+		private HBoxContainer _header = default!;
+		private TextureRect _portrait = default!;
 		private Label _title = default!;
-		private HBoxContainer _statsRow = default!;
 		private Label _hp = default!;
 		private Label _armor = default!;
 
+		private HBoxContainer _statusRow = default!;
+		private TextureRect _poisonIcon = default!;
+		private TextureRect _bombIcon = default!;
+		private TextureRect _bleedIcon = default!;
+		private TextureRect _ghoulIcon = default!;
+
+		public string SheetTier { get; set; } = "tier1"; // "tier1" | "tier2" | "boss"
+		public int SheetIndex { get; set; } = 0;         // 0..19
+
 		public override void _Ready()
 		{
-			BuildUi();
-		}
+			CustomMinimumSize = new Vector2(260, 180);
+			AddThemeConstantOverride("margin_left", 8);
+			AddThemeConstantOverride("margin_right", 8);
+			AddThemeConstantOverride("margin_top", 8);
+			AddThemeConstantOverride("margin_bottom", 8);
+			AddThemeStyleboxOverride("panel", MakePanel(new Color(0.05f, 0.08f, 0.12f, 1f)));
 
-		private void BuildUi()
-		{
-			// Card panel style
-			var panel = new StyleBoxFlat
-			{
-				BgColor = new Color(0.16f, 0.10f, 0.10f, 1f), // muted maroon
-				CornerRadiusTopLeft = 10,
-				CornerRadiusTopRight = 10,
-				CornerRadiusBottomLeft = 10,
-				CornerRadiusBottomRight = 10,
-				ContentMarginLeft = 12,
-				ContentMarginRight = 12,
-				ContentMarginTop = 10,
-				ContentMarginBottom = 10
-			};
-			AddThemeStyleboxOverride("panel", panel);
-
-			CustomMinimumSize = new Vector2(190, 110);
-
-			_root = new VBoxContainer
-			{
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				SizeFlagsVertical = SizeFlags.ShrinkCenter
-			};
-			_root.AddThemeConstantOverride("separation", 8);
+			_root = new VBoxContainer(); _root.AddThemeConstantOverride("separation", 6);
 			AddChild(_root);
 
-			_title = new Label
+			_header = new HBoxContainer(); _header.AddThemeConstantOverride("separation", 8);
+
+			_portrait = new TextureRect
 			{
-				Text = "Enemy",
-				HorizontalAlignment = HorizontalAlignment.Center,
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				ClipText = true
+				CustomMinimumSize = new Vector2(96, 96),
+				StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+				ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional
 			};
-			_title.AddThemeFontSizeOverride("font_size", 18);
+			_header.AddChild(_portrait);
+
+			_title = new Label(); _title.AddThemeFontSizeOverride("font_size", 18);
 			_title.AddThemeColorOverride("font_color", Colors.White);
-			_root.AddChild(_title);
+			_header.AddChild(_title);
 
-			_statsRow = new HBoxContainer();
-			_statsRow.AddThemeConstantOverride("separation", 12);
-			_root.AddChild(_statsRow);
+			_root.AddChild(_header);
 
-			_hp = new Label { Text = "HP: --/--" };
-			_hp.AddThemeFontSizeOverride("font_size", 16);
-			_hp.AddThemeColorOverride("font_color", new Color("FF6347")); // tomato
-			_statsRow.AddChild(_hp);
+			var stats = new HBoxContainer(); stats.AddThemeConstantOverride("separation", 12);
+			_hp = new Label(); _hp.AddThemeColorOverride("font_color", new Color("7CFF3C"));
+			_armor = new Label(); _armor.AddThemeColorOverride("font_color", new Color("3CC0FF"));
+			stats.AddChild(_hp); stats.AddChild(_armor);
+			_root.AddChild(stats);
 
-			_armor = new Label { Text = "ARM: --" };
-			_armor.AddThemeFontSizeOverride("font_size", 16);
-			_armor.AddThemeColorOverride("font_color", new Color("FFD700")); // gold
-			_statsRow.AddChild(_armor);
+			_statusRow = new HBoxContainer(); _statusRow.AddThemeConstantOverride("separation", 6);
+
+			_poisonIcon = MakeSmallIcon();
+			_bombIcon   = MakeSmallIcon();
+			_bleedIcon  = MakeSmallIcon();
+			_ghoulIcon  = MakeSmallIcon();
+
+			_statusRow.AddChild(_poisonIcon);
+			_statusRow.AddChild(_bombIcon);
+			_statusRow.AddChild(_bleedIcon);
+			_statusRow.AddChild(_ghoulIcon);
+
+			_root.AddChild(_statusRow);
+		}
+
+		private static TextureRect MakeSmallIcon() => new TextureRect
+		{
+			CustomMinimumSize = new Vector2(48, 48),
+			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+			ExpandMode = TextureRect.ExpandModeEnum.FitWidthProportional,
+			Visible = false
+		};
+
+		private static StyleBoxFlat MakePanel(Color bg)
+		{
+			var sb = new StyleBoxFlat { BgColor = bg, CornerRadiusTopLeft = 10, CornerRadiusTopRight = 10, CornerRadiusBottomLeft = 10, CornerRadiusBottomRight = 10 };
+			sb.BorderWidthLeft = sb.BorderWidthRight = sb.BorderWidthTop = sb.BorderWidthBottom = 2;
+			sb.BorderColor = new Color(0.12f, 0.03f, 0.04f, 1f);
+			return sb;
 		}
 
 		public void Bind(Enemy enemy)
 		{
 			Data = enemy;
+
+			_title.Text = $"{enemy.Name} (T{enemy.Tier})";
+			_hp.Text = $"HP {enemy.Hp}/{enemy.MaxHp}";
+			_armor.Text = $"ARM {enemy.Armor}";
+
+			_portrait.Texture = IconLibrary.GetEnemyFrame(SheetTier, SheetIndex);
+
+			_poisonIcon.Texture ??= IconLibrary.GetPoisonIcon();
+			_bombIcon.Texture   ??= IconLibrary.GetBombIcon();
+			_bleedIcon.Texture  ??= IconLibrary.GetBleedIcon();
+			_ghoulIcon.Texture  ??= IconLibrary.GetGhoulIcon();
+
 			Refresh();
 		}
 
@@ -88,19 +112,18 @@ namespace DiceArena.GodotUI
 		{
 			if (Data == null) return;
 
-			_title.Text = $"{Data.Name}  (T{Data.Tier})";
-			_hp.Text    = $"HP: {Data.Hp}/{Data.MaxHp}";
-			_armor.Text = $"ARM: {Data.Armor}";
+			_hp.Text = $"HP {Data.Hp}/{Data.MaxHp}";
+			_armor.Text = $"ARM {Data.Armor}";
 
-			// Dim card if defeated
-			var isDown = Data.Hp <= 0;
-			Modulate = isDown ? new Color(1, 1, 1, 0.45f) : Colors.White;
-		}
+			_poisonIcon.Visible = Data.PoisonStacks > 0;
+			if (_poisonIcon.Visible) _poisonIcon.TooltipText = $"Poison x{Data.PoisonStacks}";
 
-		/// <summary>Optional: call to make the card pop for the current target.</summary>
-		public void SetHighlighted(bool on)
-		{
-			Scale = on ? new Vector2(1.04f, 1.04f) : Vector2.One;
+			_bombIcon.Visible = Data.BombStacks > 0;
+			if (_bombIcon.Visible) _bombIcon.TooltipText = $"Bomb x{Data.BombStacks}";
+
+			// placeholders for when/if you add these to Enemy
+			_bleedIcon.Visible = false;
+			_ghoulIcon.Visible = false;
 		}
 	}
 }

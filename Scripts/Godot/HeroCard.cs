@@ -1,82 +1,264 @@
 // res://Scripts/Godot/HeroCard.cs
 #nullable enable
 using Godot;
+using System.Collections.Generic;
 using DiceArena.Engine;
-using System.Text;
 
-public partial class HeroCard : Panel
+namespace DiceArena.GodotUI
 {
-	public Hero Data { get; private set; } = default!;
-
-	private VBoxContainer _root = default!;
-	private Label _title = default!;
-	private HBoxContainer _statsRow = default!;
-	private Label _hp = default!;
-	private Label _armor = default!;
-	private VBoxContainer _facesBox = default!;
-	private RichTextLabel _facesList = default!;
-
-	public override void _Ready()
+	public partial class HeroCard : Panel
 	{
-		CustomMinimumSize = new Vector2(220, 140);
-		var style = new StyleBoxFlat
+		public Hero Data { get; private set; } = default!;
+
+		private VBoxContainer _root = default!;
+		private HBoxContainer _header = default!;
+		private TextureRect _classIcon = default!;
+		private Label _title = default!;
+		private Label _hp = default!;
+		private Label _armor = default!;
+
+		private HBoxContainer _statusRow = default!;
+		private TextureRect _thornIcon = default!;
+
+		// Faces row (4 spell icons from the hero's die)
+		private HBoxContainer _facesRow = default!;
+		private readonly List<TextureRect> _faceIcons = new();
+
+		public override void _Ready()
 		{
-			BgColor = new Color(0.12f, 0.14f, 0.18f),
-			CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
-			CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
-			ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 10, ContentMarginBottom = 10
-		};
-		AddThemeStyleboxOverride("panel", style);
+			// Prevent any children from drawing outside the card
+			ClipContents = true;
 
-		_root = new VBoxContainer(); _root.AddThemeConstantOverride("separation", 6);
-		AddChild(_root);
+			CustomMinimumSize = new Vector2(260, 200); // compact
+			AddThemeConstantOverride("margin_left", 8);
+			AddThemeConstantOverride("margin_right", 8);
+			AddThemeConstantOverride("margin_top", 8);
+			AddThemeConstantOverride("margin_bottom", 8);
+			AddThemeStyleboxOverride("panel", MakePanel(new Color(0.09f, 0.11f, 0.17f, 1f)));
 
-		_title = new Label { Text = "Hero", HorizontalAlignment = HorizontalAlignment.Left };
-		_title.AddThemeFontSizeOverride("font_size", 16);
-		_title.AddThemeColorOverride("font_color", Colors.White);
-		_root.AddChild(_title);
+			_root = new VBoxContainer
+			{
+				// Do not expand vertically; stay as compact as possible.
+				SizeFlagsHorizontal = SizeFlags.ExpandFill,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter
+			};
+			_root.AddThemeConstantOverride("separation", 10);
+			AddChild(_root);
 
-		_statsRow = new HBoxContainer(); _statsRow.AddThemeConstantOverride("separation", 12);
-		_root.AddChild(_statsRow);
+			// ===== Header (icon + title stack) =====
+			_header = new HBoxContainer
+			{
+				SizeFlagsHorizontal = SizeFlags.ExpandFill,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter
+			};
+			_header.AddThemeConstantOverride("separation", 10);
 
-		_hp = new Label { Text = "HP 0/0" }; _hp.AddThemeFontSizeOverride("font_size", 14);
-		_statsRow.AddChild(_hp);
+			_classIcon = new TextureRect
+			{
+				CustomMinimumSize = new Vector2(48, 48),
+				StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+				// keep the given size (don't expand)
+				ExpandMode  = TextureRect.ExpandModeEnum.KeepSize,
+				SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter
+			};
+			_header.AddChild(_classIcon);
 
-		_armor = new Label { Text = "AR 0" }; _armor.AddThemeFontSizeOverride("font_size", 14);
-		_statsRow.AddChild(_armor);
+			var titleBox = new VBoxContainer
+			{
+				SizeFlagsHorizontal = SizeFlags.ExpandFill,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter
+			};
+			titleBox.AddThemeConstantOverride("separation", 2);
 
-		_facesBox = new VBoxContainer(); _facesBox.AddThemeConstantOverride("separation", 4);
-		_root.AddChild(_facesBox);
+			_title = new Label { AutowrapMode = TextServer.AutowrapMode.Off };
+			_title.AddThemeFontSizeOverride("font_size", 18);
+			_title.AddThemeColorOverride("font_color", Colors.White);
+			titleBox.AddChild(_title);
 
-		var facesHeader = new Label { Text = "Faces", HorizontalAlignment = HorizontalAlignment.Left };
-		facesHeader.AddThemeFontSizeOverride("font_size", 14);
-		facesHeader.AddThemeColorOverride("font_color", new Color("FFD700"));
-		_facesBox.AddChild(facesHeader);
+			var stats = new HBoxContainer
+			{
+				SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter
+			};
+			stats.AddThemeConstantOverride("separation", 12);
 
-		_facesList = new RichTextLabel { BbcodeEnabled = true, FitContent = true, ScrollActive = false };
-		_facesBox.AddChild(_facesList);
-	}
+			_hp = new Label();    _hp.AddThemeColorOverride("font_color", new Color("7CFF3C"));
+			_armor = new Label(); _armor.AddThemeColorOverride("font_color", new Color("3CC0FF"));
+			stats.AddChild(_hp);
+			stats.AddChild(_armor);
+			titleBox.AddChild(stats);
 
-	public void Bind(Hero hero)
-	{
-		Data = hero;
-		Refresh();
-	}
+			_header.AddChild(titleBox);
+			_root.AddChild(_header);
 
-	public void Refresh()
-	{
-		if (Data == null) return;
-		_title.Text = $"{Data.Name} [{Data.ClassId}]";
-		_hp.Text = $"HP {Data.Hp}/{Data.MaxHp}";
-		_armor.Text = $"AR {Data.Armor}" + (Data.SpikedThorns > 0 ? $"  (Thorns {Data.SpikedThorns})" : "");
+			// ===== Faces row in compact panel (locked size, clipped) =====
+			var facesPanel = new PanelContainer
+			{
+				CustomMinimumSize = new Vector2(0, 80),
+				SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter,
+				ClipContents        = true
+			};
+			var facesBox = new StyleBoxFlat
+			{
+				BgColor = new Color(0.18f, 0.18f, 0.18f, 0.92f),
+				CornerRadiusTopLeft = 6,
+				CornerRadiusTopRight = 6,
+				CornerRadiusBottomLeft = 6,
+				CornerRadiusBottomRight = 6
+			};
+			facesPanel.AddThemeStyleboxOverride("panel", facesBox);
 
-		// Faces list (2x2 conceptual; we render as 4 bullets)
-		var sb = new StringBuilder();
-		for (int i = 0; i < Data.Loadout.Count; i++)
-		{
-			var s = Data.Loadout[i];
-			sb.Append($"• {s?.Name ?? "?"}\n");
+			_facesRow = new HBoxContainer
+			{
+				Alignment = BoxContainer.AlignmentMode.Center,
+				SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter
+			};
+			_facesRow.AddThemeConstantOverride("separation", 12);
+
+			// 4 fixed-size slots, each with a centered 48x48 icon
+			for (int i = 0; i < 4; i++)
+			{
+				var slotPanel = new PanelContainer
+				{
+					CustomMinimumSize = new Vector2(64, 64),
+					SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+					SizeFlagsVertical   = SizeFlags.ShrinkCenter,
+					ClipContents        = true
+				};
+				var slotBox = new StyleBoxFlat
+				{
+					BgColor = new Color(0.08f, 0.08f, 0.08f, 0.85f),
+					CornerRadiusTopLeft = 4,
+					CornerRadiusTopRight = 4,
+					CornerRadiusBottomLeft = 4,
+					CornerRadiusBottomRight = 4
+				};
+				slotPanel.AddThemeStyleboxOverride("panel", slotBox);
+
+				var face = new TextureRect
+				{
+					CustomMinimumSize = new Vector2(48, 48),
+					StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+					ExpandMode  = TextureRect.ExpandModeEnum.KeepSize,
+					SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+					SizeFlagsVertical   = SizeFlags.ShrinkCenter
+				};
+
+				slotPanel.AddChild(face);
+				_facesRow.AddChild(slotPanel);
+				_faceIcons.Add(face);
+			}
+
+			facesPanel.AddChild(_facesRow);
+			_root.AddChild(facesPanel);
+
+			// ===== Status row (e.g., Thorns) =====
+			_statusRow = new HBoxContainer
+			{
+				SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter
+			};
+			_statusRow.AddThemeConstantOverride("separation", 6);
+
+			_thornIcon = new TextureRect
+			{
+				CustomMinimumSize = new Vector2(32, 32),
+				StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+				ExpandMode  = TextureRect.ExpandModeEnum.KeepSize,
+				Visible = false,
+				SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
+				SizeFlagsVertical   = SizeFlags.ShrinkCenter
+			};
+			_statusRow.AddChild(_thornIcon);
+
+			_root.AddChild(_statusRow);
 		}
-		_facesList.Text = sb.ToString().TrimEnd();
+
+		private static StyleBoxFlat MakePanel(Color bg)
+		{
+			var sb = new StyleBoxFlat
+			{
+				BgColor = bg,
+				CornerRadiusTopLeft = 10,
+				CornerRadiusTopRight = 10,
+				CornerRadiusBottomLeft = 10,
+				CornerRadiusBottomRight = 10
+			};
+			sb.BorderWidthLeft = sb.BorderWidthRight = sb.BorderWidthTop = sb.BorderWidthBottom = 2;
+			sb.BorderColor = new Color(0.15f, 0.02f, 0.06f, 1f);
+			return sb;
+		}
+
+		public void Bind(Hero hero)
+		{
+			Data = hero;
+
+			_title.Text = $"{hero.Name} [{hero.ClassId}]";
+			_hp.Text = $"HP: {hero.Hp}/{hero.MaxHp}";
+			_armor.Text = $"ARM: {hero.Armor}";
+
+			_classIcon.Texture = IconLibrary.GetClassLogo(ClassIndexFromId(hero.ClassId));
+			_thornIcon.Texture ??= IconLibrary.GetThornIcon();
+
+			Refresh();
+		}
+
+		public void Refresh()
+		{
+			if (Data == null) return;
+
+			_hp.Text   = $"HP: {Data.Hp}/{Data.MaxHp}";
+			_armor.Text = $"ARM: {Data.Armor}";
+
+			_thornIcon.Visible = Data.SpikedThorns > 0;
+			if (_thornIcon.Visible)
+				_thornIcon.TooltipText = $"Thorns: {Data.SpikedThorns}";
+
+			for (int i = 0; i < _faceIcons.Count; i++)
+			{
+				Texture2D tex;
+				string tip;
+
+				if (Data.Loadout != null && i < Data.Loadout.Count && Data.Loadout[i] != null)
+				{
+					tex = IconLibrary.GetSpellIcon(Data.Loadout[i]);
+					tip = Data.Loadout[i].Name;
+				}
+				else
+				{
+					tex = IconLibrary.GetDefensiveLogo();
+					tip = "Defensive action";
+				}
+
+				_faceIcons[i].Texture = tex;
+				_faceIcons[i].TooltipText = tip;
+			}
+		}
+
+		private static int ClassIndexFromId(string id)
+		{
+			if (string.IsNullOrEmpty(id)) return 0;
+			id = id.ToLowerInvariant();
+
+			var map = new Dictionary<string, int>
+			{
+				["king"] = 0,
+				["judge"] = 1,
+				["bard"] = 2,
+				["paladin"] = 3,
+				["assassin"] = 4,
+				["priest"] = 5,
+				["necromancer"] = 6,
+				["druid"] = 7,
+				["ranger"] = 8,
+				["thief"] = 9,
+				["barbarian"] = 9 // temporary fallback
+			};
+
+			return map.TryGetValue(id, out var idx) ? idx : 0;
+		}
 	}
 }
