@@ -1,11 +1,9 @@
 // Scripts/Engine/Models.cs
-using System.Collections.Generic;
-
 namespace DiceArena.Engine
 {
+#if false
 	/// <summary>
-	/// Player/party member model used by the engine and UI.
-	/// Relies on DiceArena.Engine.Spell (defined elsewhere).
+	/// Legacy Hero (disabled). Use Engine/Hero.cs instead.
 	/// </summary>
 	public class Hero
 	{
@@ -14,11 +12,7 @@ namespace DiceArena.Engine
 		public int MaxHp { get; set; }
 		public int Hp { get; set; }
 		public int Armor { get; set; }
-
-		/// <summary>
-		/// The hero’s equipped/known spells (UI fills this during loadout).
-		/// </summary>
-		public List<Spell> Spells { get; } = new List<Spell>();
+		public System.Collections.Generic.List<Spell> Spells { get; } = new();
 
 		public Hero(string name, string classId)
 		{
@@ -29,4 +23,5 @@ namespace DiceArena.Engine
 			Armor = 0;
 		}
 	}
+#endif
 }

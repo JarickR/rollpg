@@ -1,8 +1,34 @@
 // res://Scripts/Engine/Hero.cs
+#nullable enable
 using System.Collections.Generic;
 
 namespace DiceArena.Engine
 {
+	public enum DefenseType
+	{
+		None = 0,
+		Disrupt = 1,     // cancel next spell targeting you
+		Redirect = 2,    // next spell targeting you goes to another player
+		Delay = 3,       // next spell is delayed to start of your next turn
+		Counterspell = 4,// next spell: half damage to you and reflect half to caster (works vs AoE too)
+		Dodge = 5,       // physical attack 1–3 dodge, 4–6 fail
+		Smoke = 6        // next spell: 50% miss
+	}
+
+	/// <summary>Ephemeral defense applied by rolling the Defend face. Consumed by the next eligible incoming effect this turn.</summary>
+	public sealed class DefenseToken
+	{
+		public DefenseType Type { get; set; } = DefenseType.None;
+
+		/// <summary>Optional: for Redirect, who to redirect to (Id of another hero). If null, UI/logic may auto-pick or fail.</summary>
+		public string? RedirectTargetId { get; set; }
+
+		/// <summary>True if still available to trigger; when consumed set to false.</summary>
+		public bool Active { get; set; } = true;
+
+		public override string ToString() => Type.ToString();
+	}
+
 	public class Hero
 	{
 		// Identity
@@ -26,7 +52,13 @@ namespace DiceArena.Engine
 		public int BombStacks { get; set; } = 0;
 		public int ConcentrationStacks { get; set; } = 0;
 
-		// Always 4 slots — pad with Blanks
+		/// <summary>
+		/// One-turn defensive token, granted when rolling a Defend face.
+		/// Cleared at start of your next turn (or when consumed).
+		/// </summary>
+		public DefenseToken? Defense { get; set; }
+
+		// Always 4 slots — pad with Defend faces as needed by the loadout picker
 		public List<Spell> Loadout { get; set; } = new(4)
 		{
 			Spells.Blank(), Spells.Blank(), Spells.Blank(), Spells.Blank()

@@ -1,35 +1,57 @@
 // res://Scripts/Godot/RollPopup.cs
+#nullable enable
 using Godot;
 
 namespace DiceArena.GodotUI
 {
-	public partial class RollPopup : Window
+	/// <summary>
+	/// Lightweight popup banner that shows short messages like "Rolled 6".
+	/// </summary>
+	public partial class RollPopup : PanelContainer
 	{
-		private Label _label;
+		private Label _label = default!;
 
 		public override void _Ready()
 		{
-			Title = "Roll";
-			InitialPosition = WindowInitialPosition.CenterPrimaryScreen;
-			Size = new Vector2I(420, 180);
-			Borderless = false;
+			Name = "RollPopup";
+			AnchorLeft = 0; AnchorTop = 0; AnchorRight = 0; AnchorBottom = 0;
+			OffsetLeft = 8; OffsetTop = 8;
 
-			var vb = new VBoxContainer
+			// Panel style
+			var style = new StyleBoxFlat
 			{
-				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-				SizeFlagsVertical   = Control.SizeFlags.ExpandFill
+				BgColor = new Color(0, 0, 0, 0.55f),
+				CornerRadiusTopLeft = 6,
+				CornerRadiusTopRight = 6,
+				CornerRadiusBottomLeft = 6,
+				CornerRadiusBottomRight = 6,
+				ContentMarginLeft = 10,
+				ContentMarginRight = 10,
+				ContentMarginTop = 8,
+				ContentMarginBottom = 8
 			};
-			vb.AddThemeConstantOverride("separation", 8);
-			AddChild(vb);
+			AddThemeStyleboxOverride("panel", style);
 
-			_label = UiUtils.MakeLabel("Rolling…", 18, bold: true);
-			vb.AddChild(_label);
+			_label = new Label
+			{
+				Text = "Rolling...",
+				HorizontalAlignment = HorizontalAlignment.Left,
+				SizeFlagsHorizontal = SizeFlags.ShrinkBegin,
+			};
+			_label.AddThemeFontSizeOverride("font_size", 18);
+			_label.AddThemeColorOverride("font_color", Colors.White);
+			AddChild(_label);
+
+			Visible = true;
 		}
 
-		public void ShowText(string msg)
+		public void ShowText(string text)
 		{
-			_label.Text = msg;
-			PopupCentered();
+			_label.Text = text;
+			// Simple "flash": briefly show opaque, then fade
+			Modulate = Colors.White;
+			Show();
+			// You can add a tween fade here if desired
 		}
 	}
 }
