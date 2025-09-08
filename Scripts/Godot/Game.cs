@@ -29,6 +29,12 @@ namespace DiceArena.GodotApp
 
 		private readonly Random _rng = new();
 
+		// Freeze: number of actions to skip per enemy
+		private readonly Dictionary<Enemy, int> _freezeCounters = new();
+
+		// Simple active index for whose turn (we only have one hero rolling right now)
+		private int _round = 1;
+
 		public override void _Ready()
 		{
 			Name = "Game";
@@ -49,7 +55,7 @@ namespace DiceArena.GodotApp
 			_logScroll = new ScrollContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
 			_logScroll.AddChild(_logBox);
 			_logPanel = UiUtils.MakeTitledPanel("Log", _logScroll);
-			_logPanel.CustomMinimumSize = new Vector2(0, 140);
+			_logPanel.CustomMinimumSize = new Vector2(0, 160);
 			_logPanel.SizeFlagsVertical = SizeFlags.ShrinkBegin;
 			_root.AddChild(_logPanel);
 
@@ -88,12 +94,13 @@ namespace DiceArena.GodotApp
 			_state = new GameState();
 			_enemyRow.QueueFreeChildren();
 			_heroRow.QueueFreeChildren();
+			_freezeCounters.Clear();
+			_round = 1;
 
-			// Build heroes from selections
+			// Heroes
 			for (int i = 0; i < players.Count; i++)
 			{
 				var p = players[i];
-				// FIX: use (id) ctor, then set ClassId via initializer
 				var hero = new Hero($"P{i+1}")
 				{
 					Name = $"P{i+1}",
@@ -104,6 +111,10 @@ namespace DiceArena.GodotApp
 				};
 				hero.ClearLoadoutToBlanks();
 				hero.SetLoadout(p.Faces); // exactly 4
+				hero.SpikedThorns = 0;
+				hero.ConcentrationStacks = 0;
+				hero.Defense = null;
+
 				_state.Players.Add(hero);
 
 				var card = new HeroCard();
@@ -123,7 +134,8 @@ namespace DiceArena.GodotApp
 			}
 
 			_rollButton.Disabled = false;
-			Log($"Battle ready: {players.Count} heroes vs {players.Count} enemies.");
+			Log($"Round {_round} — Battle ready: {_state.Players.Count} heroes vs {_state.Enemies.Count} enemies.");
+			_rollPopup.ShowText("Heroes: Roll to start!");
 		}
 
 		// ---- Die: 6 faces ----
@@ -145,15 +157,14 @@ namespace DiceArena.GodotApp
 			};
 		}
 
-		private void OnRollPressed()
+		private async void OnRollPressed()
 		{
 			// Simple: first alive hero acts
 			var hero = _state.Players.FirstOrDefault(h => h.Hp > 0);
 			if (hero == null) { Log("No heroes can act."); return; }
 
-			// Clear last-turn defenses at the start of your turn
-			if (hero.Defense != null && hero.Defense.Active == false)
-				hero.Defense = null;
+			// New round housekeeping: clear last-turn unused defense at start of hero turn
+			if (hero.Defense != null) hero.Defense = null;
 
 			int slot;
 			var face = RollDie(out slot);
@@ -164,6 +175,14 @@ namespace DiceArena.GodotApp
 				case DieFace.Upgrade: ShowUpgradeChooser(hero); break;
 				default:              ResolveSpellFace(hero, slot); break;
 			}
+
+			// After hero acts, enemies take their turn
+			_rollButton.Disabled = true;
+			await EnemyTurn();
+			_rollButton.Disabled = false;
+
+			_round++;
+			Log($"Round {_round} — Heroes, roll!");
 		}
 
 		// ---- Class ability ----
@@ -193,7 +212,7 @@ namespace DiceArena.GodotApp
 				else { names[i] = s?.Name ?? $"Face {i+1}"; can[i] = false; }
 			}
 
-			if (!can[0] && !can[1] && !can[2] && !can[3])
+			if (!can.Any(x => x))
 			{
 				_rollPopup.ShowText("Upgrade: no eligible face");
 				Log($"{hero.Name} rolled Upgrade but nothing could be upgraded.");
@@ -223,6 +242,9 @@ namespace DiceArena.GodotApp
 
 			_rollPopup.ShowText($"Upgrade: {PrettyName(kind, tier)} → {PrettyName(kind, next)}");
 			Log($"{hero.Name} upgrades face {index + 1}: {PrettyName(kind, tier)} → {PrettyName(kind, next)}");
+
+			// Refresh hero card faces
+			RefreshHeroCard(hero);
 		}
 
 		// ---- Resolve spell slot (includes Defend face) ----
@@ -245,45 +267,74 @@ namespace DiceArena.GodotApp
 				return;
 			}
 
+			// Concentration doubling: only for magic kinds
+			int multiplier = 1;
+			if (hero.ConcentrationStacks > 0 && IsMagicKind(kind))
+			{
+				multiplier = 2;
+				hero.ConcentrationStacks = Math.Max(0, hero.ConcentrationStacks - 1);
+				Log($"{hero.Name}'s Concentration doubles the effect!");
+			}
+
 			_rollPopup.ShowText($"{hero.Name} rolled {PrettyName(kind, tier)}");
 
 			switch (kind)
 			{
-				case "attack":      ApplySingleTargetDamage(hero, dmg: 2 * tier, bypassArmor:false); break;
-				case "fireball":    ApplySingleTargetDamage(hero, dmg: 2 * tier, bypassArmor:true);  break;
-				case "sweep":       ApplyAoeDamage(hero, dmg: tier, bypassArmor:false);               break;
+				case "attack":      ApplySingleTargetDamage(hero, dmg: 2 * tier * multiplier, bypassArmor:false); break;
+				case "fireball":    ApplySingleTargetDamage(hero, dmg: (tier == 1 ? 1 : (tier == 2 ? 3 : 5)) * multiplier, bypassArmor:true);  break;
+				case "sweep":       ApplyAoeDamage(hero, dmg: tier * multiplier, bypassArmor:false);               break;
 
 				case "heal":
-					hero.Heal(2 * tier);
-					Log($"{hero.Name} heals {2 * tier}. HP {hero.Hp}/{hero.MaxHp}");
-					RefreshHeroCard(hero);
+					{
+						int amt = (tier == 1 ? 2 : tier == 2 ? 4 : 6) * multiplier;
+						hero.Heal(amt);
+						Log($"{hero.Name} heals {amt}. HP {hero.Hp}/{hero.MaxHp}");
+						RefreshHeroCard(hero);
+					}
 					break;
 
 				case "armor":
-					hero.AddArmor(2 * tier);
-					Log($"{hero.Name} gains {2 * tier} Armor. AR {hero.Armor}");
-					RefreshHeroCard(hero);
+					{
+						int ar = (tier == 1 ? 2 : tier == 2 ? 4 : 6) * multiplier;
+						hero.AddArmor(ar);
+						Log($"{hero.Name} gains {ar} Armor. AR {hero.Armor}");
+						RefreshHeroCard(hero);
+					}
+					break;
+
+				case "chain":
+					ApplyChainLightning(hero, tier, multiplier);
+					break;
+
+				case "freeze":
+					ApplyFreeze(hero, tier * multiplier);
+					break;
+
+				case "spiked":
+					ApplySpikedShield(hero, tier * multiplier);
 					break;
 
 				case "poison":
 					{
+						int stacks = 1 * multiplier;
 						var t = FirstAliveEnemy();
-						if (t != null) { t.PoisonStacks += 1; Log($"{hero.Name} applies Poison to {t.Name} (stacks {t.PoisonStacks})."); RefreshEnemyCard(t); }
+						if (t != null) { t.PoisonStacks += stacks; Log($"{hero.Name} applies Poison ×{stacks} to {t.Name} (stacks {t.PoisonStacks})."); RefreshEnemyCard(t); }
 						else Log("No valid targets.");
 					}
 					break;
 
 				case "bomb":
 					{
+						int stacks = 1 * multiplier;
 						var t = FirstAliveEnemy();
-						if (t != null) { t.BombStacks += 1; Log($"{hero.Name} plants a Bomb on {t.Name} (stacks {t.BombStacks})."); RefreshEnemyCard(t); }
+						if (t != null) { t.BombStacks += stacks; Log($"{hero.Name} plants Bomb ×{stacks} on {t.Name} (stacks {t.BombStacks})."); RefreshEnemyCard(t); }
 						else Log("No valid targets.");
 					}
 					break;
 
 				case "concentration":
-					hero.ConcentrationStacks += 1;
-					Log($"{hero.Name} gains Concentration (stacks {hero.ConcentrationStacks}).");
+					hero.ConcentrationStacks += 1; // one use = doubles next magic
+					Log($"{hero.Name} gains Concentration (x{hero.ConcentrationStacks}).");
 					break;
 
 				default:
@@ -291,6 +342,10 @@ namespace DiceArena.GodotApp
 					break;
 			}
 		}
+
+		// ---- Helpers: spell kinds ----
+		private static bool IsMagicKind(string kind)
+			=> kind is "fireball" or "chain" or "freeze" or "poison" or "bomb" or "concentration";
 
 		// ---------------- DEFENSE SYSTEM ----------------
 
@@ -383,6 +438,157 @@ namespace DiceArena.GodotApp
 			return true;
 		}
 
+		// ----------------- ENEMY TURN / STATUSES -----------------
+
+		private async System.Threading.Tasks.Task EnemyTurn()
+		{
+			_rollPopup.ShowText("Enemies act…");
+
+			// 1) Status ticks on enemies (Poison, Bomb)
+			ProcessEnemyStatuses();
+
+			// 2) Each alive enemy acts once
+			foreach (var enemy in _state.Enemies.ToList())
+			{
+				if (enemy.Hp <= 0) continue;
+
+				// Freeze skip?
+				if (_freezeCounters.TryGetValue(enemy, out var skips) && skips > 0)
+				{
+					_freezeCounters[enemy] = skips - 1;
+					Log($"{enemy.Name} is frozen and skips an action. ({skips - 1} left)");
+					continue;
+				}
+
+				// Choose a target hero: first alive hero for now
+				var target = _state.Players.FirstOrDefault(h => h.Hp > 0);
+				if (target == null) { Log("All heroes are down!"); break; }
+
+				// Physical attack baseline (2 damage)
+				int dmg = 2;
+
+				// Check target's physical defense (Dodge)
+				if (!ResolveIncomingPhysicalDefense(target))
+				{
+					Log($"{enemy.Name}'s attack misses {target.Name}!");
+					continue;
+				}
+
+				// Apply damage (respect Armor)
+				int hpBefore = target.Hp;
+				target.Damage(dmg, bypassArmor: false);
+				Log($"{enemy.Name} strikes {target.Name} for {dmg}. {target.Name} HP {target.Hp}/{target.MaxHp}");
+				RefreshHeroCard(target);
+
+				// Thorns from Spiked Shield reflect to the attacker
+				if (target.SpikedThorns > 0 && enemy.Hp > 0)
+				{
+					int thorn = target.SpikedThorns;
+					enemy.Damage(thorn, bypassArmor: true);
+					Log($"{target.Name}'s Spiked Shield reflects {thorn} back to {enemy.Name} (ignores Armor).");
+					RefreshEnemyCard(enemy);
+					if (enemy.Hp <= 0)
+					{
+						Log($"{enemy.Name} is defeated by thorns!");
+					}
+				}
+
+				// Tiny delay so actions are readable
+				await ToSignal(GetTree().CreateTimer(0.3f), SceneTreeTimer.SignalName.Timeout);
+			}
+
+			// 3) Cleanup dead enemies
+			_state.Enemies.RemoveAll(e => e.Hp <= 0);
+			foreach (var child in _enemyRow.GetChildren().ToArray())
+			{
+				if (child is EnemyCard ec && ec.Data.Hp <= 0) { ec.QueueFree(); }
+			}
+			if (_state.Enemies.Count == 0)
+			{
+				_rollPopup.ShowText("Victory!");
+				Log("All enemies defeated!");
+				_rollButton.Disabled = true;
+			}
+		}
+
+		private void ProcessEnemyStatuses()
+		{
+			if (_state.Enemies.Count == 0) return;
+
+			// We’ll manage Bomb passing using enemy index adjacency (wrap-around)
+			for (int i = 0; i < _state.Enemies.Count; i++)
+			{
+				var e = _state.Enemies[i];
+				if (e.Hp <= 0) continue;
+
+				// Poison: for each stack, roll d6: 1-4 deal 1 (ignore armor), 5-6 cure 1
+				if (e.PoisonStacks > 0)
+				{
+					int totalDmg = 0;
+					int cures = 0;
+					int stacksToProcess = e.PoisonStacks;
+					for (int s = 0; s < stacksToProcess; s++)
+					{
+						int roll = _rng.Next(1,7);
+						if (roll <= 4) totalDmg += 1; else cures += 1;
+					}
+					e.PoisonStacks = Math.Max(0, e.PoisonStacks - cures);
+					if (totalDmg > 0)
+					{
+						e.Damage(totalDmg, bypassArmor: true);
+					}
+					if (totalDmg > 0 || cures > 0)
+					{
+						Log($"{e.Name} Poison: {totalDmg} dmg, {cures} cure(s). (stacks {e.PoisonStacks})");
+						RefreshEnemyCard(e);
+					}
+				}
+
+				// Bomb: for each stack, roll d6 → 1-2 explode (6 dmg to holder),
+				// 3-4 pass right, 5-6 pass left (wrap).
+				if (e.BombStacks > 0)
+				{
+					int stacks = e.BombStacks;
+					int remain = stacks;
+					for (int b = 0; b < stacks; b++)
+					{
+						int roll = _rng.Next(1,7);
+						if (roll <= 2)
+						{
+							// explode
+							e.Damage(6, bypassArmor: true);
+							Log($"{e.Name}'s Bomb explodes for 6 (ignores Armor)!");
+							remain--;
+							if (e.Hp <= 0) break;
+						}
+						else
+						{
+							// pass
+							int idx = i;
+							if (roll <= 4)
+							{
+								// pass right
+								idx = (i + 1) % _state.Enemies.Count;
+								Log($"{e.Name}'s Bomb passes right to {_state.Enemies[idx].Name}.");
+							}
+							else
+							{
+								// pass left
+								idx = (i - 1 + _state.Enemies.Count) % _state.Enemies.Count;
+								Log($"{e.Name}'s Bomb passes left to {_state.Enemies[idx].Name}.");
+							}
+							_state.Enemies[idx].BombStacks += 1;
+							remain--;
+						}
+					}
+					e.BombStacks = Math.Max(0, remain);
+					RefreshEnemyCard(e);
+				}
+			}
+		}
+
+		// ----------------- SPELL IMPLEMENTATIONS -----------------
+
 		private Enemy? FirstAliveEnemy() => _state.Enemies.Find(e => e.Hp > 0);
 
 		private void ApplySingleTargetDamage(Hero hero, int dmg, bool bypassArmor)
@@ -390,11 +596,11 @@ namespace DiceArena.GodotApp
 			var target = FirstAliveEnemy();
 			if (target == null) { Log("No valid targets."); return; }
 
-			int before = target.Hp;
+			// NOTE: If you later make enemies cast spells to heroes, call ResolveIncomingSpellDefense before applying.
 			target.Damage(dmg, bypassArmor);
 			Log($"{hero.Name} hits {target.Name} for {dmg}" + (bypassArmor ? " (bypass armor)" : "") + $". HP {target.Hp}/{target.MaxHp}");
 			RefreshEnemyCard(target);
-			if (target.Hp <= 0 && before > 0) Log($"{target.Name} is defeated!");
+			if (target.Hp <= 0) Log($"{target.Name} is defeated!");
 		}
 
 		private void ApplyAoeDamage(Hero hero, int dmg, bool bypassArmor)
@@ -409,6 +615,56 @@ namespace DiceArena.GodotApp
 			if (any) Log($"{hero.Name} sweeps all enemies for {dmg} each.");
 			else Log("No valid targets.");
 		}
+
+		private void ApplyChainLightning(Hero hero, int tier, int multiplier)
+		{
+			var alive = _state.Enemies.Where(e => e.Hp > 0).ToList();
+			if (alive.Count == 0) { Log("No valid targets."); return; }
+
+			int dmg = (tier == 1 ? 1 : tier == 2 ? 2 : 3) * multiplier;
+
+			if (tier == 3)
+			{
+				foreach (var e in alive)
+				{
+					e.Damage(dmg, bypassArmor: true);
+					RefreshEnemyCard(e);
+				}
+				Log($"{hero.Name}'s Chain Lightning++ arcs to all enemies for {dmg} (ignores Armor).");
+				return;
+			}
+
+			int hit = 0;
+			foreach (var e in alive)
+			{
+				e.Damage(dmg, bypassArmor: true);
+				RefreshEnemyCard(e);
+				hit++;
+				if (hit >= 3) break; // up to 3 total targets
+			}
+			Log($"{hero.Name}'s Chain Lightning{(tier==2?"+":"")} hits {hit} target(s) for {dmg} each (ignores Armor).");
+		}
+
+		private void ApplyFreeze(Hero hero, int skipCount)
+		{
+			var t = FirstAliveEnemy();
+			if (t == null) { Log("No valid targets."); return; }
+
+			if (!_freezeCounters.ContainsKey(t)) _freezeCounters[t] = 0;
+			_freezeCounters[t] += skipCount;
+			Log($"{hero.Name} freezes {t.Name}: they will skip {skipCount} action(s).");
+			RefreshEnemyCard(t);
+		}
+
+		private void ApplySpikedShield(Hero hero, int value)
+		{
+			hero.AddArmor(value);
+			hero.SpikedThorns = Math.Max(hero.SpikedThorns, value);
+			Log($"{hero.Name} readies Spiked Shield: +{value} Armor and {value} thorns on melee hits.");
+			RefreshHeroCard(hero);
+		}
+
+		// ----------------- UI REFRESH / LOG -----------------
 
 		private void RefreshEnemyCard(Enemy target)
 		{
@@ -431,7 +687,7 @@ namespace DiceArena.GodotApp
 			var label = UiUtils.MakeLabel(message, 14);
 			_logBox.AddChild(label);
 
-			while (_logBox.GetChildCount() > 5)
+			while (_logBox.GetChildCount() > 7)
 			{
 				var first = _logBox.GetChild(0);
 				_logBox.RemoveChild(first);
@@ -446,6 +702,7 @@ namespace DiceArena.GodotApp
 			if (IsInstanceValid(vsb)) _logScroll.ScrollVertical = (int)vsb.MaxValue;
 		}
 
+		// ---- Name parsing supports new kinds ----
 		private static bool TryInferKindTier(Spell s, out string kind, out int tier)
 		{
 			var name = (s?.Name ?? "").Trim().ToLowerInvariant();
@@ -457,15 +714,18 @@ namespace DiceArena.GodotApp
 
 			string baseKind = name switch
 			{
-				"defend"        => "defend",
-				"attack"        => "attack",
-				"sweep"         => "sweep",
-				"heal"          => "heal",
-				"armor"         => "armor",
-				"fireball"      => "fireball",
-				"poison"        => "poison",
-				"bomb"          => "bomb",
+				"defend"              => "defend",
+				"attack"              => "attack",
+				"sweep"               => "sweep",
+				"heal"                => "heal",
+				"armor" or "shield"   => "armor",
+				"fireball"            => "fireball",
+				"poison"              => "poison",
+				"bomb"                => "bomb",
 				"concentrate" or "concentration" => "concentration",
+				"chainlightning"      => "chain",
+				"freeze"              => "freeze",
+				"spikedshield"        => "spiked",
 				_ => ""
 			};
 
@@ -478,6 +738,14 @@ namespace DiceArena.GodotApp
 			=> tier switch { 1 => Title(kind), 2 => $"{Title(kind)}+", 3 => $"{Title(kind)}++", _ => Title(kind) };
 
 		private static string Title(string kind)
-			=> kind.Length == 0 ? "" : char.ToUpper(kind[0]) + (kind.Length > 1 ? kind.Substring(1) : "");
+		{
+			return kind switch
+			{
+				"chain"   => "Chain Lightning",
+				"freeze"  => "Freeze",
+				"spiked"  => "Spiked Shield",
+				_ => kind.Length == 0 ? "" : char.ToUpper(kind[0]) + (kind.Length > 1 ? kind.Substring(1) : "")
+			};
+		}
 	}
 }

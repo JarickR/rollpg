@@ -2,14 +2,14 @@
   {
     "id": "thief",
     "name": "Thief",
-    "trait": "Backstab: Single-target attacks you make deal +1 damage.",
-    "heroAction": "Trickery:\n• Steal – Roll target’s die; resolve it as if you rolled it.\n• Vanish – Become untargetable until your next turn.\n• Sabotage – Remove 1 Armor or 1 positive buff from a target."
+    "trait": "Backstab: All single-target attacks deal +1 damage.",
+    "heroAction": "Trickery:\n• Steal – Roll a target’s die and ....\n• Sabotage – Remove 1 Armor or defensive buff from a target."
   },
   {
     "id": "judge",
     "name": "Judge",
-    "trait": "Retribution: When you take damage, the attacker suffers 1 damage.",
-    "heroAction": "Judgment Call:\n• Reroll – Reroll your die.\n• Condemn – Double the next damage you deal to one enemy.\n• Balance – Either deal 1, heal 1, or grant 1 Armor."
+    "trait": "Retribution: When Judge takes damage, attacker suffers 1 damage.",
+    "heroAction": "Judgment Call:\n• Reroll – Reroll your die tw... Balance – Choose one: deal 1 dmg, heal 1 HP, or grant 1 Armor."
   },
   {
     "id": "tank",
@@ -30,28 +30,10 @@
     "heroAction": "Command:\n• Rally – All allies gain 1 Armor.\n• Advance – Choose an ally; they roll immediately.\n• Edict – Remove 1 debuff from all allies."
   },
   {
-    "id": "wizard",
-    "name": "Wizard",
-    "trait": "Arcane Focus: Your spell damage ignores 1 Armor.",
-    "heroAction": "Mystic Prep:\n• Channel – Your next spell this turn deals +2 damage.\n• Blink – Evade the next instance of damage.\n• Scry – Peek at top of the encounter deck (or reroll)."
-  },
-  {
-    "id": "ranger",
-    "name": "Ranger",
-    "trait": "Hunter’s Mark: The first enemy you hit each round takes +1 damage.",
-    "heroAction": "Fieldcraft:\n• Mark – Mark a target (you deal +1 damage to it until it dies).\n• Quickshot – Deal 1 damage to two different targets.\n• Camouflage – Gain 2 Armor and become hard to target."
-  },
-  {
-    "id": "cleric",
-    "name": "Cleric",
-    "trait": "Sanctuary: The first time an ally would drop to 0 HP each combat, set them to 1 HP instead.",
-    "heroAction": "Divine Aid:\n• Mend – Heal 3 split among allies.\n• Ward – Grant 2 Armor to an ally.\n• Purify – Remove all poison/bomb stacks from an ally."
-  },
-  {
-    "id": "berserker",
-    "name": "Berserker",
-    "trait": "Rage: While at or below half HP, your attacks deal +1 damage.",
-    "heroAction": "Fury:\n• Reckless Swing – Deal 3 to an enemy and 1 to yourself.\n• Roar – Enemies deal -1 damage until your next turn.\n• Enrage – Take 1 damage to gain +2 damage on your next attack."
+    "id": "lich",
+    "name": "Lich",
+    "trait": "Undying Will: When you would die, instead set HP to 1 and lose all temporary boons (once per combat).",
+    "heroAction": "Necrotic Rite:\n• Drain Life – Deal 2 damage and heal 1.\n• Bone Ward – Gain 2 Armor that reflects 1 damage.\n• Death’s Call – Mark an enemy; if it dies this round, gain +2 temporary HP."
   },
   {
     "id": "paladin",
@@ -60,51 +42,21 @@
     "heroAction": "Sacred Duty:\n• Smite – Deal 2 damage that bypasses Armor.\n• Aegis – Grant 2 Armor to an ally; you gain 1 Armor.\n• Lay on Hands – Heal an ally 3."
   },
   {
-    "id": "necromancer",
-    "name": "Necromancer",
-    "trait": "Grave Pact: When an enemy dies, gain 1 temporary HP (max +3).",
-    "heroAction": "Dark Arts:\n• Rot – Apply 2 Poison to a target.\n• Raise – Summon a fragile minion that absorbs the next 2 damage to you.\n• Harvest – Deal 1 damage to all enemies; heal 1."
+    "id": "barbarian",
+    "name": "Barbarian",
+    "trait": "Rage: While at or below half HP, your attacks deal +1 damage.",
+    "heroAction": "Blood Rage:\n• Berserk Strike – Sacrifice 1 H...attack.\n• Savage Wound – Apply 2 stacks of Bleed to any enemy."
   },
   {
     "id": "bard",
     "name": "Bard",
-    "trait": "Inspiration: The first ally to roll after you gets advantage (reroll once).",
-    "heroAction": "Performance:\n• Valor – An ally’s next damage is +2.\n• Lullaby – 50%: target enemy loses its next action.\n• Crescendo – All allies gain 1 Armor."
+    "trait": "Encore: Once per round, when Bard attacks, an ally rolls 1 die and immediately activates the result.",
+    "heroAction": "Songbook:\n• Bardic Inspiration – Each ally c...y on their next attack.\n• Song of Rest – Heal all allies 1 HP."
   },
   {
-    "id": "monk",
-    "name": "Monk",
-    "trait": "Flow: After you dodge damage, your next attack deals +2.",
-    "heroAction": "Discipline:\n• Palm – Deal 2 and apply Disarm (-1 damage) to a target.\n• Step – Become untargetable until your next turn.\n• Breathe – Cleanse 1 debuff from yourself; gain 1 Armor."
-  },
-  {
-    "id": "druid",
-    "name": "Druid",
-    "trait": "Wildheart: When you heal an ally, give them 1 Armor.",
-    "heroAction": "Shapeshift:\n• Bear – Gain 3 Armor; your next attack deals +1.\n• Falcon – Your next attack targets an additional enemy.\n• Grove – Heal all allies 1."
-  },
-  {
-    "id": "assassin",
-    "name": "Assassin",
-    "trait": "Shadowstep: If you haven’t taken damage since your last turn, your first attack this turn bypasses Armor.",
-    "heroAction": "Kill Chain:\n• Marked – Your next hit deals +2 against a single target.\n• Smoke – You become untargetable; remove 1 debuff.\n• Cut – Deal 1 damage; if the target is below half HP, deal +1."
-  },
-  {
-    "id": "warlock",
-    "name": "Warlock",
-    "trait": "Pact Boon: When you apply a debuff, gain 1 temporary HP (max +3).",
-    "heroAction": "Eldritch Arts:\n• Hex – Target takes +1 damage from all sources until your next turn.\n• Leech – Deal 2 and heal 1.\n• Blink Curse – Next time target attacks, it deals -2 damage."
-  },
-  {
-    "id": "sorcerer",
-    "name": "Sorcerer",
-    "trait": "Surge: When you roll Upgrade, also gain +1 damage on your next spell.",
-    "heroAction": "Metamagic:\n• Empower – Your next spell this turn deals +2.\n• Twin – Your next single-target spell hits a second target.\n• Shield – Prevent the next 2 damage to yourself."
-  },
-  {
-    "id": "knight",
-    "name": "Knight",
-    "trait": "Guard: The first attack against an adjacent ally each round deals -1 damage.",
-    "heroAction": "Chivalry:\n• Challenge – Force a target to attack you next.\n• Shield Bash – Deal 1 and Stagger (target’s next roll has -1).\n• Brace – Gain 2 Armor; if you already have Armor, gain +1 extra."
+    "id": "warden",
+    "name": "Warden",
+    "trait": "Bonded Ally: If a Familiar is active, it acts each...d). Roll d4: 1=Miss, 2=Defensive action, 3=Attack, 4=Attack+1.",
+    "heroAction": "Capture / Command Familiar:\n• Capture – Roll...in Armor equal to its Armor (cannot be resummoned this combat)."
   }
 ]

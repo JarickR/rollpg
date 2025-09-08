@@ -10,7 +10,7 @@ namespace DiceArena.Engine
 		Disrupt = 1,     // cancel next spell targeting you
 		Redirect = 2,    // next spell targeting you goes to another player
 		Delay = 3,       // next spell is delayed to start of your next turn
-		Counterspell = 4,// next spell: half damage to you and reflect half to caster (works vs AoE too)
+		Counterspell = 4,// next spell: half damage to you and half back to caster (works vs AoE too)
 		Dodge = 5,       // physical attack 1–3 dodge, 4–6 fail
 		Smoke = 6        // next spell: 50% miss
 	}
@@ -19,13 +19,8 @@ namespace DiceArena.Engine
 	public sealed class DefenseToken
 	{
 		public DefenseType Type { get; set; } = DefenseType.None;
-
-		/// <summary>Optional: for Redirect, who to redirect to (Id of another hero). If null, UI/logic may auto-pick or fail.</summary>
 		public string? RedirectTargetId { get; set; }
-
-		/// <summary>True if still available to trigger; when consumed set to false.</summary>
 		public bool Active { get; set; } = true;
-
 		public override string ToString() => Type.ToString();
 	}
 
@@ -52,13 +47,13 @@ namespace DiceArena.Engine
 		public int BombStacks { get; set; } = 0;
 		public int ConcentrationStacks { get; set; } = 0;
 
-		/// <summary>
-		/// One-turn defensive token, granted when rolling a Defend face.
-		/// Cleared at start of your next turn (or when consumed).
-		/// </summary>
+		/// <summary>Damage reflected back to melee attackers (from Spiked Shield). Typically equals Armor gained by that spell.</summary>
+		public int SpikedThorns { get; set; } = 0;
+
+		/// <summary>One-turn defensive token, granted when rolling a Defend face.</summary>
 		public DefenseToken? Defense { get; set; }
 
-		// Always 4 slots — pad with Defend faces as needed by the loadout picker
+		// Always 4 slots — pad with blanks/Defend by loadout picker
 		public List<Spell> Loadout { get; set; } = new(4)
 		{
 			Spells.Blank(), Spells.Blank(), Spells.Blank(), Spells.Blank()

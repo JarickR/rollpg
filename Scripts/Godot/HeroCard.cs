@@ -2,105 +2,81 @@
 #nullable enable
 using Godot;
 using DiceArena.Engine;
+using System.Text;
 
-namespace DiceArena.GodotUI
+public partial class HeroCard : Panel
 {
-	/// <summary>
-	/// Visual card for a Hero. Call Bind(hero) once, then Refresh() when stats change.
-	/// </summary>
-	public partial class HeroCard : PanelContainer
+	public Hero Data { get; private set; } = default!;
+
+	private VBoxContainer _root = default!;
+	private Label _title = default!;
+	private HBoxContainer _statsRow = default!;
+	private Label _hp = default!;
+	private Label _armor = default!;
+	private VBoxContainer _facesBox = default!;
+	private RichTextLabel _facesList = default!;
+
+	public override void _Ready()
 	{
-		// Bound data
-		public Hero Data { get; private set; } = default!;
-
-		// UI
-		private VBoxContainer _root = default!;
-		private Label _title = default!;
-		private HBoxContainer _statsRow = default!;
-		private Label _hp = default!;
-		private Label _armor = default!;
-
-		public override void _Ready()
+		CustomMinimumSize = new Vector2(220, 140);
+		var style = new StyleBoxFlat
 		{
-			BuildUi();
-		}
+			BgColor = new Color(0.12f, 0.14f, 0.18f),
+			CornerRadiusTopLeft = 8, CornerRadiusTopRight = 8,
+			CornerRadiusBottomLeft = 8, CornerRadiusBottomRight = 8,
+			ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 10, ContentMarginBottom = 10
+		};
+		AddThemeStyleboxOverride("panel", style);
 
-		private void BuildUi()
+		_root = new VBoxContainer(); _root.AddThemeConstantOverride("separation", 6);
+		AddChild(_root);
+
+		_title = new Label { Text = "Hero", HorizontalAlignment = HorizontalAlignment.Left };
+		_title.AddThemeFontSizeOverride("font_size", 16);
+		_title.AddThemeColorOverride("font_color", Colors.White);
+		_root.AddChild(_title);
+
+		_statsRow = new HBoxContainer(); _statsRow.AddThemeConstantOverride("separation", 12);
+		_root.AddChild(_statsRow);
+
+		_hp = new Label { Text = "HP 0/0" }; _hp.AddThemeFontSizeOverride("font_size", 14);
+		_statsRow.AddChild(_hp);
+
+		_armor = new Label { Text = "AR 0" }; _armor.AddThemeFontSizeOverride("font_size", 14);
+		_statsRow.AddChild(_armor);
+
+		_facesBox = new VBoxContainer(); _facesBox.AddThemeConstantOverride("separation", 4);
+		_root.AddChild(_facesBox);
+
+		var facesHeader = new Label { Text = "Faces", HorizontalAlignment = HorizontalAlignment.Left };
+		facesHeader.AddThemeFontSizeOverride("font_size", 14);
+		facesHeader.AddThemeColorOverride("font_color", new Color("FFD700"));
+		_facesBox.AddChild(facesHeader);
+
+		_facesList = new RichTextLabel { BbcodeEnabled = true, FitContent = true, ScrollActive = false };
+		_facesBox.AddChild(_facesList);
+	}
+
+	public void Bind(Hero hero)
+	{
+		Data = hero;
+		Refresh();
+	}
+
+	public void Refresh()
+	{
+		if (Data == null) return;
+		_title.Text = $"{Data.Name} [{Data.ClassId}]";
+		_hp.Text = $"HP {Data.Hp}/{Data.MaxHp}";
+		_armor.Text = $"AR {Data.Armor}" + (Data.SpikedThorns > 0 ? $"  (Thorns {Data.SpikedThorns})" : "");
+
+		// Faces list (2x2 conceptual; we render as 4 bullets)
+		var sb = new StringBuilder();
+		for (int i = 0; i < Data.Loadout.Count; i++)
 		{
-			// Card panel style
-			var panel = new StyleBoxFlat
-			{
-				BgColor = new Color(0.12f, 0.14f, 0.18f, 1f), // deep gray-blue
-				CornerRadiusTopLeft = 10,
-				CornerRadiusTopRight = 10,
-				CornerRadiusBottomLeft = 10,
-				CornerRadiusBottomRight = 10,
-				ContentMarginLeft = 12,
-				ContentMarginRight = 12,
-				ContentMarginTop = 10,
-				ContentMarginBottom = 10
-			};
-			AddThemeStyleboxOverride("panel", panel);
-
-			CustomMinimumSize = new Vector2(190, 110);
-
-			_root = new VBoxContainer
-			{
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				SizeFlagsVertical = SizeFlags.ShrinkCenter
-			};
-			_root.AddThemeConstantOverride("separation", 8);
-			AddChild(_root);
-
-			_title = new Label
-			{
-				Text = "Hero",
-				HorizontalAlignment = HorizontalAlignment.Center,
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				ClipText = true
-			};
-			_title.AddThemeFontSizeOverride("font_size", 18);
-			_title.AddThemeColorOverride("font_color", Colors.White);
-			_root.AddChild(_title);
-
-			_statsRow = new HBoxContainer();
-			_statsRow.AddThemeConstantOverride("separation", 12);
-			_root.AddChild(_statsRow);
-
-			_hp = new Label { Text = "HP: --/--" };
-			_hp.AddThemeFontSizeOverride("font_size", 16);
-			_hp.AddThemeColorOverride("font_color", new Color("7CFC00")); // lawn green
-			_statsRow.AddChild(_hp);
-
-			_armor = new Label { Text = "ARM: --" };
-			_armor.AddThemeFontSizeOverride("font_size", 16);
-			_armor.AddThemeColorOverride("font_color", new Color("87CEFA")); // light sky blue
-			_statsRow.AddChild(_armor);
+			var s = Data.Loadout[i];
+			sb.Append($"• {s?.Name ?? "?"}\n");
 		}
-
-		public void Bind(Hero hero)
-		{
-			Data = hero;
-			Refresh();
-		}
-
-		public void Refresh()
-		{
-			if (Data == null) return;
-
-			_title.Text = $"{Data.Name}  [{Data.ClassId}]";
-			_hp.Text    = $"HP: {Data.Hp}/{Data.MaxHp}";
-			_armor.Text = $"ARM: {Data.Armor}";
-
-			// Dim card if downed
-			var isDown = Data.Hp <= 0;
-			Modulate = isDown ? new Color(1, 1, 1, 0.45f) : Colors.White;
-		}
-
-		/// <summary>Optional: call to make the card pop for the active hero.</summary>
-		public void SetHighlighted(bool on)
-		{
-			Scale = on ? new Vector2(1.04f, 1.04f) : Vector2.One;
-		}
+		_facesList.Text = sb.ToString().TrimEnd();
 	}
 }
