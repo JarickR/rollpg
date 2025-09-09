@@ -1,21 +1,44 @@
-[gd_scene load_steps=2 format=3 uid="uid://fi7b144lcvk6"]
+[gd_scene load_steps=3 format=3 uid="uid://dalkd4gr4dlrq"]
 
-[ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1_qv0at"]
+[ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1"]
+
+[sub_resource type="CSharpScript" id="CSharpScript_qv0at"]
+script/source = "using Godot;
+using System;
+
+public partial class LogBox : Panel
+{
+}
+"
 
 [node name="GameRoot" type="Control"]
 layout_mode = 3
-anchors_preset = 0
-script = ExtResource("1_qv0at")
-
-[node name="Buttons" type="VBoxContainer" parent="."]
-layout_mode = 1
-anchors_preset = -1
+anchors_preset = 15
 anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1")
+
+[node name="Main_TopRow#EnemiesRow" type="HFlowContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+
+[node name="Main_ButtonsRow#UpgradeBtn" type="Button" parent="."]
+layout_mode = 2
+text = "Upgrade"
+
+[node name="Main_ButtonsRow#D6Btn" type="Button" parent="."]
+layout_mode = 2
+text = "d6"
+
+[node name="LogBox" type="Panel" parent="."]
+layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
-
-[node name="LogBox" type="TextEdit" parent="."]
-layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
-editable = false
+script = SubResource("CSharpScript_qv0at")
