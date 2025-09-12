@@ -2,7 +2,11 @@ using Godot;
 
 namespace DiceArena.GodotUI
 {
-	public partial class BattleLogPanel : PanelContainer
+	/// <summary>
+	/// Simple battle log panel with a header, clear button, and a RichTextLabel.
+	/// Provides AppendLine(string) and AppendLine(string, Color?) for the logger.
+	/// </summary>
+	public partial class BattleLogPanel : VBoxContainer
 	{
 		private Label _title = default!;
 		private Button _clearBtn = default!;
@@ -10,13 +14,12 @@ namespace DiceArena.GodotUI
 
 		public override void _Ready()
 		{
-			var root = new VBoxContainer();
-			root.AddThemeConstantOverride("separation", 6);
-			AddChild(root);
+			AddThemeConstantOverride("separation", 6);
 
+			// Header
 			var header = new HBoxContainer();
 			header.AddThemeConstantOverride("separation", 8);
-			root.AddChild(header);
+			AddChild(header);
 
 			_title = new Label { Text = "Battle Log" };
 			header.AddChild(_title);
@@ -25,43 +28,51 @@ namespace DiceArena.GodotUI
 			_clearBtn.Pressed += Clear;
 			header.AddChild(_clearBtn);
 
+			// Log body
 			_log = new RichTextLabel
 			{
 				FitContent = false,
 				ScrollActive = true,
-				ScrollFollowing = true,        // auto-follow once we scroll
-				AutowrapMode = TextServer.AutowrapMode.Word,
-				CustomMinimumSize = new Vector2(520, 220),
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				SizeFlagsVertical = SizeFlags.ShrinkCenter
+				AutowrapMode = TextServer.AutowrapMode.Word
 			};
-			root.AddChild(_log);
+
+			// Sizing
+			_log.CustomMinimumSize = new Vector2(520, 220);
+			_log.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+			_log.SizeFlagsVertical   = SizeFlags.ShrinkCenter;
+
+			AddChild(_log);
 		}
 
-		public void Log(string line) => AppendLine(line);
+		/// <summary>Write a line in default color.</summary>
+		public void AppendLine(string text) => AppendLine(text, null);
 
-		public void AppendLine(string text)
+		/// <summary>Write a colored line.</summary>
+		public void AppendLine(string text, Color? color)
 		{
 			if (_log == null) return;
+
+			bool pushed = false;
+			if (color.HasValue)
+			{
+				_log.PushColor(color.Value);
+				pushed = true;
+			}
+
 			_log.AppendText((text ?? string.Empty) + "\n");
 
-			// Defer the scroll until the frame after the append,
-			// to avoid p_line = -1 issues.
-			CallDeferred(nameof(ScrollToBottom));
-		}
+			if (pushed)
+				_log.Pop();
 
-		private void ScrollToBottom()
-		{
-			if (_log == null) return;
-			int lines = _log.GetLineCount();
-			if (lines > 0)
-				_log.ScrollToLine(lines - 1);
+			// Safe, deferred scroll (no TextEdit crash paths)
+			UiScroll.ToBottom(_log);
 		}
 
 		public void Clear()
 		{
 			if (_log == null) return;
 			_log.Clear();
+			// No scroll when empty
 		}
 	}
 }

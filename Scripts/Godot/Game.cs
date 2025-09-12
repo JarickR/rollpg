@@ -1,59 +1,34 @@
+// Scripts/Godot/Game.cs
 using Godot;
-using DiceArena.GodotUI;
+using DiceArena.Engine.Content;
+using DiceArena.Engine.Loadout;
 
-namespace DiceArena.GodotApp
+public partial class Game : Node
 {
-	/// <summary>
-	/// Root game controller. Spawns heroes and enemies, logs actions,
-	/// and manages the scene-level UI panels.
-	/// </summary>
-	public partial class Game : Control
+	private ContentBundle _bundle = default!;
+
+	public override void _Ready()
 	{
-		private BattleLogPanel _logPanel = default!;
+		_bundle = ContentDatabase.LoadFromFolder("res://Content");
 
-		public override void _Ready()
-		{
-			// Try unique-name lookup first (%BattleLogPanel is the shorthand).
-			_logPanel =
-				GetNodeOrNull<BattleLogPanel>("%BattleLogPanel") ??
-				GetNodeOrNull<BattleLogPanel>("BattleLogPanel") ??
-				null;
+		// Inject bundle into LoadoutScreen if present
+		var loadout = GetNodeOrNull<LoadoutScreen>("%LoadoutScreen");
+		if (loadout != null)
+			loadout.Bundle = _bundle;
 
-			// If the scene didn’t include one, create a temporary panel
-			// so we never null-ref (useful for dev/testing).
-			if (_logPanel == null)
-			{
-				_logPanel = new BattleLogPanel();
-				AddChild(_logPanel);
-			}
+		// If you have a battle HUD root, hide it so loadout owns the screen
+		var battleHud = GetNodeOrNull<Control>("%BattleHud");
+		if (battleHud != null)
+			battleHud.Visible = false;
 
-			_logPanel.Log("=== Game initialized ===");
+		// If you don’t have a single root, you can group battle UI nodes as "battle_ui"
+		// and hide them like this:
+		// foreach (var n in GetTree().GetNodesInGroup("battle_ui"))
+		//     if (n is CanvasItem c) c.Visible = false;
 
-			// Demo spawns (replace with your real logic).
-			SpawnEnemies(3);
-			SpawnTestHero();
-		}
-
-		/// <summary>
-		/// Spawn a given number of test enemies.
-		/// Replace with your real combat/enemy manager later.
-		/// </summary>
-		private void SpawnEnemies(int count)
-		{
-			for (int i = 0; i < count; i++)
-			{
-				// Example: log each spawn
-				_logPanel?.Log($"Spawned enemy Goblin {i + 1}");
-			}
-		}
-
-		/// <summary>
-		/// Spawn a test hero (placeholder).
-		/// Replace with your real hero management logic.
-		/// </summary>
-		private void SpawnTestHero()
-		{
-			_logPanel?.Log("Spawned test hero: Paladin with 4 spells.");
-		}
+		// Optional: inject bundle into HeroPanel if present (keeps previous behavior)
+		var heroPanel = GetNodeOrNull<HeroPanel>("%HeroPanel");
+		if (heroPanel != null)
+			heroPanel.SetBundle(_bundle);
 	}
 }

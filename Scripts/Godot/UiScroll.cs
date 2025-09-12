@@ -1,16 +1,24 @@
-// Scripts/Godot/UiScroll.cs
 using Godot;
 
 namespace DiceArena.GodotUI
 {
-	/// <summary>
-	/// No-op scroll helper. Left in place so callers can compile safely.
-	/// </summary>
 	public static class UiScroll
 	{
-		/// <summary>
-		/// Intentionally does nothing (prevents TextEdit/RichTextLabel p_line errors).
-		/// </summary>
-		public static void ToBottom(Node node) { /* no-op */ }
+		public static void ToBottom(Node node)
+		{
+			if (node == null) return;
+			node.CallDeferred(nameof(DoScrollToBottom), node);
+		}
+
+		public static void DoScrollToBottom(Node node)
+		{
+			if (node is RichTextLabel rtl)
+			{
+				int lines = rtl.GetLineCount();
+				if (lines > 0)
+					rtl.ScrollToLine(lines - 1);
+			}
+			// If it's TextEdit or anything else: no-op on purpose
+		}
 	}
 }

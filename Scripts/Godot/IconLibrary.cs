@@ -1,233 +1,175 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using DiceArena.Engine; // for Spell
 
 namespace DiceArena.GodotUI
 {
 	/// <summary>
-	/// Centralized loader + sprite-sheet slicer for enemies, classes, and spells.
-	/// Supports vertical strips (rows) and grid sheets.
+	/// Centralized loader for individual PNG thumbnails (500x500) and misc helpers.
+	/// Adjust the folder constants below to match your project paths.
 	/// </summary>
 	public static class IconLibrary
 	{
-		// ------------------ ART PATHS (adjust if needed) ------------------
-		private const string ClassLogosPath = "res://art/class-logos.png"; // 10 rows
+		// ---------- Folders (adjust to your actual res:// layout) ----------
+		private const string ENEMY_T1_DIR = "res://art/enemies/tier1/";
+		private const string ENEMY_T2_DIR = "res://art/enemies/tier2/";
+		private const string ENEMY_BOSS_DIR = "res://art/enemies/bosses/";
 
-		private const string Tier1SpellsPath = "res://art/Tier1Spells.png"; // vertical strip
-		private const string Tier2SpellsPath = "res://art/Tier2Spells.png"; // vertical strip
-		private const string Tier3SpellsPath = "res://art/Tier3Spells.png"; // vertical strip
+		private const string CLASS_DIR = "res://art/classes/";    // e.g., thief.png, judge.png, …
+		private const string SPELL_DIR = "res://art/spells/";     // e.g., attack.png, shield.png, …
 
-		// Optional enemy sheets (if/when you add them as grids)
-		private const string Tier1EnemiesPath = "res://art/Tier1Enemies.png";
-		private const string Tier2EnemiesPath = "res://art/Tier2Enemies.png";
-		private const string BossesPath       = "res://art/Bosses.png";
+		// If you also have status icons:
+		private const string STATUS_DIR = "res://art/status/";    // e.g., poison.png, bomb.png, …
 
-		private const int ENEMY_GRID_COLS = 5;
-		private const int ENEMY_GRID_ROWS = 4;
+		// ---------- Caches ----------
+		private static readonly Dictionary<string, Texture2D> _texCache = new();
 
-		// ------------------ CACHES ------------------
-		private static readonly Dictionary<string, Texture2D> _texCache   = new();
-		private static readonly Dictionary<string, AtlasTexture> _atlasCache = new();
-
-		// ------------------ UTILITIES ------------------
-		private static Texture2D Transparent1x1()
+		// Public transparent 1×1 as a safe fallback
+		public static Texture2D Transparent1x1()
 		{
 			var img = Image.CreateEmpty(1, 1, false, Image.Format.Rgba8);
 			img.Fill(Colors.Transparent);
 			return ImageTexture.CreateFromImage(img);
 		}
 
-		public static Texture2D MakePlaceholderTexture(int w, int h, Color color)
-		{
-			var img = Image.CreateEmpty(Math.Max(1, w), Math.Max(1, h), false, Image.Format.Rgba8);
-			img.Fill(color);
-			return ImageTexture.CreateFromImage(img);
-		}
-
-		/// <summary>Safe Texture2D loader with caching.</summary>
+		/// <summary>Safe loader with caching.</summary>
 		public static Texture2D LoadTexture(string path)
 		{
-			if (_texCache.TryGetValue(path, out var t))
-				return t;
+			if (string.IsNullOrWhiteSpace(path))
+				return Transparent1x1();
+
+			if (_texCache.TryGetValue(path, out var tex))
+				return tex;
 
 			var loaded = GD.Load<Texture2D>(path);
 			if (loaded != null)
+			{
 				_texCache[path] = loaded;
-
-			return loaded ?? Transparent1x1();
+				return loaded;
+			}
+			return Transparent1x1();
 		}
 
-		private static Texture2D GetFrameFromGridSheet(string sheetPath, int cols, int rows, int frameIndex)
+		// ---------- Enemy thumbnails (individual files) ----------
+		// Declare your files explicitly so we don’t need to scan directories at runtime.
+		// Put the exact filenames you have in your project (500x500 PNGs).
+
+		private static readonly string[] T1_ENEMIES =
 		{
-			var sheet = LoadTexture(sheetPath);
+			ENEMY_T1_DIR + "bat.png",
+			ENEMY_T1_DIR + "slime.png",
+			ENEMY_T1_DIR + "skeleton.png",
+			ENEMY_T1_DIR + "wolf.png",
+			ENEMY_T1_DIR + "goblin.png",
+		};
 
-			// In some builds GetSize() returns Vector2 (float); cast explicitly.
-			var size = sheet.GetSize();
-			int sheetW = (int)MathF.Round(size.X);
-			int sheetH = (int)MathF.Round(size.Y);
-
-			cols = Math.Max(1, cols);
-			rows = Math.Max(1, rows);
-
-			int tileW = Math.Max(1, sheetW / cols);
-			int tileH = Math.Max(1, sheetH / rows);
-
-			int total = cols * rows;
-			int idx = ((frameIndex % total) + total) % total;
-
-			int col = idx % cols;
-			int row = idx / cols;
-
-			var region = new Rect2(col * tileW, row * tileH, tileW, tileH);
-			string key = $"{sheetPath}|G|{region.Position.X},{region.Position.Y},{region.Size.X},{region.Size.Y}";
-
-			if (_atlasCache.TryGetValue(key, out var cached))
-				return cached;
-
-			var atlas = new AtlasTexture { Atlas = sheet, Region = region };
-			_atlasCache[key] = atlas;
-			return atlas;
-		}
-
-		private static Texture2D GetFrameFromVerticalStrip(string sheetPath, int rowIndex, int rows)
+		private static readonly string[] T2_ENEMIES =
 		{
-			var sheet = LoadTexture(sheetPath);
+			ENEMY_T2_DIR + "orc.png",
+			ENEMY_T2_DIR + "ogre.png",
+			ENEMY_T2_DIR + "wraith.png",
+			ENEMY_T2_DIR + "elemental.png",
+		};
 
-			// Explicit casts again (float -> int).
-			var size = sheet.GetSize();
-			int sheetW = (int)MathF.Round(size.X);
-			int sheetH = (int)MathF.Round(size.Y);
-
-			rows = Math.Max(1, rows);
-			int tileH = Math.Max(1, sheetH / rows);
-			int row = ((rowIndex % rows) + rows) % rows;
-
-			var region = new Rect2(0, row * tileH, sheetW, tileH);
-			string key = $"{sheetPath}|V|{row}|{rows}|{sheetW}x{tileH}";
-
-			if (_atlasCache.TryGetValue(key, out var cached))
-				return cached;
-
-			var atlas = new AtlasTexture { Atlas = sheet, Region = region };
-			_atlasCache[key] = atlas;
-			return atlas;
-		}
-
-		// ------------------ ENEMIES (optional grid) ------------------
-		public static Texture2D GetEnemyFrame(int tier, int frameIndex)
+		private static readonly string[] BOSS_ENEMIES =
 		{
-			string sheetPath = tier switch
+			ENEMY_BOSS_DIR + "dragon.png",
+			ENEMY_BOSS_DIR + "lich_king.png",
+			ENEMY_BOSS_DIR + "behemoth.png",
+		};
+
+		public static List<Texture2D> GetEnemiesForTier(int tier)
+		{
+			var list = new List<Texture2D>();
+			var src = tier switch
 			{
-				1 => Tier1EnemiesPath,
-				2 => Tier2EnemiesPath,
-				3 => BossesPath,
-				_ => Tier1EnemiesPath
+				1 => T1_ENEMIES,
+				2 => T2_ENEMIES,
+				3 => BOSS_ENEMIES,
+				_ => T1_ENEMIES,
 			};
 
-			return GetFrameFromGridSheet(sheetPath, ENEMY_GRID_COLS, ENEMY_GRID_ROWS, frameIndex);
+			foreach (var p in src)
+				list.Add(LoadTexture(p));
+
+			return list;
 		}
 
-		// ------------------ CLASSES (vertical strip with 10 rows) ------------------
-		/// <summary>
-		/// Order (0-based rows): Thief, Judge, Tank, Vampire, King, Lich, Paladin, Barbarian, Warden, Bard
-		/// </summary>
-		public static Texture2D GetClassLogoByKey(string key)
+		/// <summary>Return a random enemy icon for the tier.</summary>
+		public static Texture2D GetRandomEnemyIcon(int tier)
 		{
-			if (string.IsNullOrWhiteSpace(key))
-				return MakePlaceholderTexture(64, 64, Colors.Gray);
+			var pool = GetEnemiesForTier(tier);
+			if (pool.Count == 0) return Transparent1x1();
 
-			var name = key.Trim().ToLowerInvariant();
-
-			var indexByName = new Dictionary<string, int>
-			{
-				["thief"]     = 0,
-				["judge"]     = 1,
-				["tank"]      = 2,
-				["vampire"]   = 3,
-				["king"]      = 4,
-				["lich"]      = 5,
-				["paladin"]   = 6,
-				["barbarian"] = 7,
-				["warden"]    = 8,
-				["bard"]      = 9
-			};
-
-			if (indexByName.TryGetValue(name, out int idx))
-				return GetFrameFromVerticalStrip(ClassLogosPath, idx, 10);
-
-			GD.PrintErr($"IconLibrary: Unknown class '{key}'.");
-			return MakePlaceholderTexture(64, 64, Colors.DimGray);
+			var rng = new RandomNumberGenerator();
+			rng.Randomize();
+			var idx = rng.RandiRange(0, pool.Count - 1);
+			return pool[idx];
 		}
 
-		// ------------------ SPELLS (vertical strips) ------------------
-		public static Texture2D GetSpellIcon(int tier, int index, int rows)
+		// ---------- Class logos (individual files) ----------
+		// Keys must match your Hero.ClassId / class keys used in UI.
+
+		private static readonly Dictionary<string, string> CLASS_LOGOS = new(StringComparer.OrdinalIgnoreCase)
 		{
-			string path = tier switch
-			{
-				1 => Tier1SpellsPath,
-				2 => Tier2SpellsPath,
-				3 => Tier3SpellsPath,
-				_ => Tier1SpellsPath
-			};
-			return GetFrameFromVerticalStrip(path, index, rows);
+			["thief"]     = CLASS_DIR + "thief.png",
+			["judge"]     = CLASS_DIR + "judge.png",
+			["tank"]      = CLASS_DIR + "tank.png",
+			["vampire"]   = CLASS_DIR + "vampire.png",
+			["king"]      = CLASS_DIR + "king.png",
+			["lich"]      = CLASS_DIR + "lich.png",
+			["paladin"]   = CLASS_DIR + "paladin.png",
+			["barbarian"] = CLASS_DIR + "barbarian.png",
+			["bard"]      = CLASS_DIR + "bard.png",
+			["warden"]    = CLASS_DIR + "warden.png",
+		};
+
+		public static Texture2D GetClassLogoByKey(string classKey)
+		{
+			if (string.IsNullOrWhiteSpace(classKey)) return Transparent1x1();
+			return CLASS_LOGOS.TryGetValue(classKey, out var path) ? LoadTexture(path) : Transparent1x1();
 		}
 
-		public static Texture2D GetSpellIcon(Spell spell)
+		// ---------- Spell icons (individual files) ----------
+		// Map spell keys/names to files; adjust to your exact filenames.
+
+		private static readonly Dictionary<string, string> SPELL_ICONS = new(StringComparer.OrdinalIgnoreCase)
 		{
-			if (spell == null)
-				return MakePlaceholderTexture(56, 56, Colors.DarkSlateGray);
+			// Tier 1
+			["attack"]   = SPELL_DIR + "attack.png",
+			["heart"]    = SPELL_DIR + "heart.png",
+			["shield"]   = SPELL_DIR + "shield.png",   // “shield” applies armor (your note)
+			["dash"]     = SPELL_DIR + "dash.png",
+			["stab"]     = SPELL_DIR + "stab.png",
+			["lightning"]= SPELL_DIR + "lightning.png",
+			["ice"]      = SPELL_DIR + "ice.png",
+			["thorns"]   = SPELL_DIR + "thorns.png",
 
-			var name = (spell.Name ?? "").Trim().ToLowerInvariant();
+			// Tier 2
+			["bomb"]       = SPELL_DIR + "bomb.png",
+			["poison"]     = SPELL_DIR + "poison.png",
+			["yin_yang"]   = SPELL_DIR + "yin_yang.png",
+			["backstab"]   = SPELL_DIR + "backstab.png",
+			["lightning+"] = SPELL_DIR + "lightning_plus.png",
+			["freeze"]     = SPELL_DIR + "freeze.png",
+			["shield+"]    = SPELL_DIR + "shield_plus.png",
+			["thorns+"]    = SPELL_DIR + "thorns_plus.png",
 
-			var t1 = new Dictionary<string, int>
-			{
-				["attack"]   = 0, ["sword"] = 0,
-				["heart"]    = 1, ["heal"]  = 1,
-				["shield"]   = 2,
-				["dash"]     = 3,
-				["stab"]     = 4, ["dagger"] = 4,
-				["lightning"]= 5,
-				["ice"]      = 6, ["freeze"] = 6,
-				["thorns"]   = 7
-			};
+			// Tier 3 (examples)
+			["attack++"]   = SPELL_DIR + "attack_plus_plus.png",
+			["heart++"]    = SPELL_DIR + "heart_plus_plus.png",
+			["shield++"]   = SPELL_DIR + "shield_plus_plus.png",
+			["dash++"]     = SPELL_DIR + "dash_plus_plus.png",
+			["lightning++"]= SPELL_DIR + "lightning_plus_plus.png",
+			["ice++"]      = SPELL_DIR + "ice_plus_plus.png",
+			["yin_yang++"] = SPELL_DIR + "yin_yang_plus_plus.png",
+			["defensive"]  = SPELL_DIR + "defensive.png",
+		};
 
-			var t2 = new Dictionary<string, int>
-			{
-				["attack+"]   = 0,
-				["heart+"]    = 1,
-				["shield+"]   = 2,
-				["yinyang"]   = 3, ["yin yang"] = 3,
-				["fire"]      = 4,
-				["poison"]    = 5,
-				["bomb"]      = 6,
-				["backstab"]  = 7
-			};
-
-			var t3 = new Dictionary<string, int>
-			{
-				["attack++"]   = 0,
-				["heart++"]    = 1,
-				["shield++"]   = 2,
-				["dash++"]     = 3,
-				["dagger++"]   = 4,
-				["lightning++"]= 5,
-				["ice++"]      = 6,
-				["thorns++"]   = 7
-			};
-
-			if (t1.TryGetValue(name, out var j1)) return GetSpellIcon(1, j1, 8);
-			if (t2.TryGetValue(name, out var j2)) return GetSpellIcon(2, j2, 8);
-			if (t3.TryGetValue(name, out var j3)) return GetSpellIcon(3, j3, 8);
-
-			GD.PrintErr($"IconLibrary: Unknown spell '{spell.Name}'.");
-			return MakePlaceholderTexture(56, 56, Colors.DarkSlateGray);
-		}
-
-		public static Texture2D GetSpellIconByName(string spellName)
+		public static Texture2D GetSpellIconByName(string key)
 		{
-			var s = new Spell { Name = spellName };
-			return GetSpellIcon(s);
+			if (string.IsNullOrWhiteSpace(key)) return Transparent1x1();
+			return SPELL_ICONS.TryGetValue(key, out var path) ? LoadTexture(path) : Transparent1x1();
 		}
 	}
 }

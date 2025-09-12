@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://c5k2bpas28tv3"]
+
+[node name="EnemyCard" type="PanelContainer"]
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
