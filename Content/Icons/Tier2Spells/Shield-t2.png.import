@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b256p5edxwfj5"
-path="res://.godot/imported/Shield-t2.png-fd5f9e2886786f31f83e97316c704d8a.ctex"
+uid="uid://d1d3kjkdreoo1"
+path="res://.godot/imported/shield-t2.png-b106076ea3a794d12668e7a07a9a1ec9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier2Spells/Shield-t2.png"
-dest_files=["res://.godot/imported/Shield-t2.png-fd5f9e2886786f31f83e97316c704d8a.ctex"]
+source_file="res://Content/Icons/Tier2Spells/shield-t2.png"
+dest_files=["res://.godot/imported/shield-t2.png-b106076ea3a794d12668e7a07a9a1ec9.ctex"]
 
 [params]
 

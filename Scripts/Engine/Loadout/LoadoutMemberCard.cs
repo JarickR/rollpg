@@ -1,251 +1,325 @@
 // Scripts/Engine/Loadout/LoadoutMemberCard.cs
-using System;
+using Godot;
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
 using DiceArena.Engine.Content;
 
 namespace DiceArena.Engine.Loadout
 {
-	public partial class LoadoutMemberCard : VBoxContainer
+	/// <summary>
+	/// One party member card with:
+	///  - Class grid (single-select)
+	///  - Tier 1 spells row (max 2)
+	///  - Tier 2 spells row (single-select)
+	/// Icons from IconLibrary (class by id, spell by id+tier).
+	/// Captions fallback: Name ?? Id ?? "?"
+	/// Emits SelectionChanged when a selection toggles.
+	/// </summary>
+	public partial class LoadoutMemberCard : PanelContainer
 	{
-		// ---------- UI ----------
-		private Label _titleLabel = null!;
-		private GridContainer _classGrid = null!;
-		private VBoxContainer _tier1Box = null!;
-		private VBoxContainer _tier2Box = null!;
+		[Signal] public delegate void SelectionChangedEventHandler(int memberIndex, string? classId, string[] tier1Ids, string? tier2Id);
 
-		// ---------- State ----------
-		private readonly ButtonGroup _classGroup = new();
-		private ButtonGroup _tier2Group = new(); // re-created whenever we rebuild tier2 row
+		public int MemberIndex { get; private set; } = -1;
 
-		private readonly List<ClassDef> _classes = new();
-		private readonly List<SpellDef> _t1Offers = new();
-		private readonly List<SpellDef> _t2Offers = new();
+		// Theme/layout knobs
+		private static readonly Vector2 CardMinSize = new Vector2(440, 360);
+		private const int ClassColumns = 5;
+		private static readonly Vector2 IconSize = new Vector2(56, 56);
+		private const float Spacing = 8f;
+		private const float SectionGap = 12f;
+		private const float CaptionFontSize = 13f;
+		private const float SectionTitleFontSize = 16f;
 
-		private readonly List<CheckButton> _t1Toggles = new();
-		private readonly List<CheckBox> _t2Radios = new();
+		// Built nodes
+		private VBoxContainer? _root;
+		private GridContainer? _classGrid;
+		private HBoxContainer? _tier1Row;
+		private HBoxContainer? _tier2Row;
 
-		private ContentBundle? _bundle;
-		private string? _selectedClassId;
+		// Button lookup
+		private readonly Dictionary<string, BaseButton> _classBtns = new();
+		private readonly Dictionary<string, BaseButton> _tier1Btns = new();
+		private readonly Dictionary<string, BaseButton> _tier2Btns = new();
 
-		public string TitleText
+		// Current selection
+		public string? SelectedClassId { get; private set; }
+		public HashSet<string> SelectedTier1Ids { get; } = new();
+		public string? SelectedTier2Id { get; private set; }
+
+		public void Build(
+			int memberIndex,
+			IReadOnlyList<ClassDef> classes,
+			IReadOnlyList<SpellDef> spellsTier1,
+			IReadOnlyList<SpellDef> spellsTier2)
 		{
-			get => _titleLabel?.Text ?? string.Empty;
-			set { if (_titleLabel != null) _titleLabel.Text = value; }
-		}
+			MemberIndex = memberIndex;
 
-		public string? GetSelectedClassId() => _selectedClassId;
-
-		public (List<string> Tier1, string? Tier2) GetPicks()
-		{
-			var t1 = new List<string>();
-			for (int i = 0; i < _t1Offers.Count && i < _t1Toggles.Count; i++)
+			// Clear old children safely
+			for (int i = GetChildCount() - 1; i >= 0; i--)
 			{
-				if (_t1Toggles[i].ButtonPressed)
-					t1.Add(_t1Offers[i].Id);
+				var c = GetChild(i);
+				if (GodotObject.IsInstanceValid(c))
+					RemoveChild(c);
+				c.QueueFree();
 			}
 
-			string? t2 = null;
-			for (int i = 0; i < _t2Offers.Count && i < _t2Radios.Count; i++)
+			// Reset selections & lookups
+			SelectedClassId = null;
+			SelectedTier1Ids.Clear();
+			SelectedTier2Id = null;
+			_classBtns.Clear();
+			_tier1Btns.Clear();
+			_tier2Btns.Clear();
+
+			// Panel styling for separation
+			CustomMinimumSize = CardMinSize;
+			var sb = new StyleBoxFlat
 			{
-				if (_t2Radios[i].ButtonPressed)
+				BgColor = new Color(0.12f, 0.12f, 0.12f, 1f),
+				CornerRadiusTopLeft = 12,
+				CornerRadiusTopRight = 12,
+				CornerRadiusBottomLeft = 12,
+				CornerRadiusBottomRight = 12,
+				BorderWidthLeft = 1,
+				BorderWidthTop = 1,
+				BorderWidthRight = 1,
+				BorderWidthBottom = 1,
+				BorderColor = new Color(0.25f, 0.25f, 0.25f, 1f)
+			};
+			AddThemeStyleboxOverride("panel", sb);
+			AddThemeConstantOverride("margin_left", 10);
+			AddThemeConstantOverride("margin_right", 10);
+			AddThemeConstantOverride("margin_top", 10);
+			AddThemeConstantOverride("margin_bottom", 10);
+
+			_root = new VBoxContainer
+			{
+				Name = $"MemberCard_{memberIndex}",
+				CustomMinimumSize = CardMinSize
+			};
+			_root.AddThemeConstantOverride("separation", (int)SectionGap);
+			AddChild(_root);
+
+			// Header
+			_root.AddChild(MakeSectionLabel($"Member {memberIndex + 1}", SectionTitleFontSize, true));
+
+			// Class grid section
+			_root.AddChild(MakeSectionLabel("Class", SectionTitleFontSize, false));
+			_classGrid = new GridContainer
+			{
+				Columns = ClassColumns,
+				CustomMinimumSize = new Vector2(CardMinSize.X, IconSize.Y + 24f)
+			};
+			_classGrid.AddThemeConstantOverride("v_separation", (int)Spacing);
+			_classGrid.AddThemeConstantOverride("h_separation", (int)Spacing);
+
+			foreach (var cls in classes)
+			{
+				var id = cls.Id;
+				var (tile, btn) = MakeIconToggleWithCaption(
+					texture: IconLibrary.GetClassTexture(id),
+					caption: SafeName(cls.Name, cls.Id),
+					tooltip: SafeName(cls.Name, cls.Id));
+				_classBtns[id] = btn;
+				btn.ToggleMode = true;
+				btn.Toggled += (bool pressed) => OnClassToggled(id, pressed);
+				_classGrid.AddChild(tile);
+			}
+			_root.AddChild(_classGrid);
+
+			// Tier 1 spells (2 picks) with horizontal scroll if long
+			_root.AddChild(MakeSectionLabel("Tier 1 Spells (pick 2)", SectionTitleFontSize, false));
+			var t1Scroll = new ScrollContainer
+			{
+				HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+				VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
+				CustomMinimumSize = new Vector2(CardMinSize.X, IconSize.Y + 28f)
+			};
+			_tier1Row = new HBoxContainer();
+			_tier1Row.AddThemeConstantOverride("separation", (int)Spacing);
+			t1Scroll.AddChild(_tier1Row);
+			foreach (var sp in spellsTier1)
+			{
+				var id = sp.Id;
+				var (tile, btn) = MakeIconToggleWithCaption(
+					texture: IconLibrary.GetSpellTexture(id, 1),
+					caption: SafeName(sp.Name, sp.Id),
+					tooltip: MakeSpellTooltip(sp));
+				_tier1Btns[id] = btn;
+				btn.ToggleMode = true;
+				btn.Toggled += (bool pressed) => OnTier1Toggled(id, pressed);
+				_tier1Row.AddChild(tile);
+			}
+			_root.AddChild(t1Scroll);
+
+			// Tier 2 spells (1 pick)
+			_root.AddChild(MakeSectionLabel("Tier 2 Spells (pick 1)", SectionTitleFontSize, false));
+			var t2Scroll = new ScrollContainer
+			{
+				HorizontalScrollMode = ScrollContainer.ScrollMode.Auto,
+				VerticalScrollMode = ScrollContainer.ScrollMode.Disabled,
+				CustomMinimumSize = new Vector2(CardMinSize.X, IconSize.Y + 28f)
+			};
+			_tier2Row = new HBoxContainer();
+			_tier2Row.AddThemeConstantOverride("separation", (int)Spacing);
+			t2Scroll.AddChild(_tier2Row);
+			foreach (var sp in spellsTier2)
+			{
+				var id = sp.Id;
+				var (tile, btn) = MakeIconToggleWithCaption(
+					texture: IconLibrary.GetSpellTexture(id, 2),
+					caption: SafeName(sp.Name, sp.Id),
+					tooltip: MakeSpellTooltip(sp));
+				_tier2Btns[id] = btn;
+				btn.ToggleMode = true;
+				btn.Toggled += (bool pressed) => OnTier2Toggled(id, pressed);
+				_tier2Row.AddChild(tile);
+			}
+			_root.AddChild(t2Scroll);
+
+			// Post-build nudge to prevent collapse and trigger reflow
+			SetDeferred("custom_minimum_size", CardMinSize);
+			_root.SetDeferred("custom_minimum_size", CardMinSize);
+			QueueRedraw();
+
+			Log.V($"Built member card {MemberIndex + 1}: classes={classes.Count}, t1={spellsTier1.Count}, t2={spellsTier2.Count}");
+		}
+
+		// ---- Selection handlers ----
+
+		private void OnClassToggled(string id, bool pressed)
+		{
+			if (pressed)
+			{
+				// single-select: unpress others
+				foreach (var kv in _classBtns)
+					if (kv.Key != id) kv.Value.SetPressedNoSignal(false);
+				SelectedClassId = id;
+			}
+			else
+			{
+				// allow deselect to "none"
+				if (SelectedClassId == id) SelectedClassId = null;
+			}
+			EmitSelection();
+		}
+
+		private void OnTier1Toggled(string id, bool pressed)
+		{
+			if (pressed)
+			{
+				if (SelectedTier1Ids.Count >= 2)
 				{
-					t2 = _t2Offers[i].Id;
-					break;
+					// reject third pick
+					if (_tier1Btns.TryGetValue(id, out var b))
+						b.SetPressedNoSignal(false);
+					Log.W($"Member {MemberIndex + 1}: Tier1 limit reached (2).");
+				}
+				else
+				{
+					SelectedTier1Ids.Add(id);
 				}
 			}
-
-			return (t1, t2);
-		}
-
-		/// <summary>Set data and (re)build the card.</summary>
-		public void Setup(
-			ContentBundle bundle,
-			IReadOnlyList<ClassDef> classes,
-			IReadOnlyList<SpellDef> tier1Offers,
-			IReadOnlyList<SpellDef> tier2Offers)
-		{
-			_bundle = bundle;
-
-			_classes.Clear();
-			_classes.AddRange(classes);
-
-			_t1Offers.Clear();
-			_t1Offers.AddRange(tier1Offers);
-
-			_t2Offers.Clear();
-			_t2Offers.AddRange(tier2Offers);
-
-			BuildIfNeeded();
-			RebuildClassGrid();
-			ShowOffers(_t1Offers, _t2Offers);
-		}
-
-		public void ShowOffers(IReadOnlyList<SpellDef> t1, IReadOnlyList<SpellDef> t2)
-		{
-			_t1Offers.Clear();
-			_t1Offers.AddRange(t1);
-
-			_t2Offers.Clear();
-			_t2Offers.AddRange(t2);
-
-			// clear previous rows
-			ClearChildren(_tier1Box);
-			ClearChildren(_tier2Box);
-
-			// ---------- Tier 1 ----------
-			var t1Panel = new PanelContainer();
-			t1Panel.MouseFilter = MouseFilterEnum.Pass;
-			var t1Inner = new VBoxContainer();
-			t1Panel.AddChild(t1Inner);
-			ApplyCardMargins(t1Inner);
-			t1Inner.AddThemeConstantOverride("separation", 6);
-			t1Inner.AddChild(new Label { Text = "Tier 1 — pick 2", HorizontalAlignment = HorizontalAlignment.Center });
-
-			var t1Row = new HBoxContainer();
-			t1Row.AddThemeConstantOverride("separation", 12);
-			t1Inner.AddChild(t1Row);
-
-			_t1Toggles.Clear();
-			foreach (var sp in _t1Offers)
+			else
 			{
-				var cb = new CheckButton
-				{
-					Text = sp.Name,
-					TooltipText = sp.Text
-				};
-				cb.CustomMinimumSize = new Vector2(150, 36);
-				cb.Toggled += OnTier1Toggled;
-				t1Row.AddChild(cb);
-				_t1Toggles.Add(cb);
+				SelectedTier1Ids.Remove(id);
 			}
-			_tier1Box.AddChild(t1Panel);
+			EmitSelection();
+		}
 
-			// ---------- Tier 2 ----------
-			var t2Panel = new PanelContainer();
-			t2Panel.MouseFilter = MouseFilterEnum.Pass;
-			var t2Inner = new VBoxContainer();
-			t2Panel.AddChild(t2Inner);
-			ApplyCardMargins(t2Inner);
-			t2Inner.AddThemeConstantOverride("separation", 6);
-			t2Inner.AddChild(new Label { Text = "Tier 2 — pick 1", HorizontalAlignment = HorizontalAlignment.Center });
-
-			var t2Row = new HBoxContainer();
-			t2Row.AddThemeConstantOverride("separation", 12);
-			t2Inner.AddChild(t2Row);
-
-			_t2Radios.Clear();
-			_tier2Group = new ButtonGroup(); // reset group
-
-			foreach (var sp in _t2Offers)
+		private void OnTier2Toggled(string id, bool pressed)
+		{
+			if (pressed)
 			{
-				var rb = new CheckBox
-				{
-					Text = sp.Name,
-					TooltipText = sp.Text,
-					ButtonGroup = _tier2Group,
-					ToggleMode = true
-				};
-				rb.CustomMinimumSize = new Vector2(150, 36);
-
-				// Explicit exclusivity to ensure only one Tier-2 stays selected
-				rb.Toggled += pressed => OnTier2Toggled(rb, pressed);
-
-				t2Row.AddChild(rb);
-				_t2Radios.Add(rb);
+				// single-select: unpress others
+				foreach (var kv in _tier2Btns)
+					if (kv.Key != id) kv.Value.SetPressedNoSignal(false);
+				SelectedTier2Id = id;
 			}
-			_tier2Box.AddChild(t2Panel);
-		}
-
-		// =========================================================
-		// Building blocks & helpers
-		// =========================================================
-		private void BuildIfNeeded()
-		{
-			if (_titleLabel != null) return;
-
-			AddThemeConstantOverride("separation", 12);
-
-			_titleLabel = new Label { Text = "Member", ThemeTypeVariation = "" };
-			_titleLabel.AddThemeFontSizeOverride("font_size", 18);
-			AddChild(_titleLabel);
-
-			// Classes
-			_classGrid = new GridContainer { Columns = 8 };
-			_classGrid.AddThemeConstantOverride("h_separation", 8);
-			_classGrid.AddThemeConstantOverride("v_separation", 8);
-			AddChild(_classGrid);
-
-			// Tier sections
-			_tier1Box = new VBoxContainer();
-			_tier1Box.AddThemeConstantOverride("separation", 8);
-			AddChild(_tier1Box);
-
-			_tier2Box = new VBoxContainer();
-			_tier2Box.AddThemeConstantOverride("separation", 8);
-			AddChild(_tier2Box);
-		}
-
-		private void RebuildClassGrid()
-		{
-			ClearChildren(_classGrid);
-
-			foreach (var cls in _classes)
+			else
 			{
-				var btn = new CheckBox
-				{
-					Text = cls.Name,
-					ButtonGroup = _classGroup,
-					ToggleMode = true,
-					TooltipText = $"{cls.Name}"
-				};
-				btn.CustomMinimumSize = new Vector2(140, 40);
-
-				string id = cls.Id;
-				btn.Toggled += toggled =>
-				{
-					if (toggled) _selectedClassId = id;
-				};
-
-				_classGrid.AddChild(btn);
+				if (SelectedTier2Id == id) SelectedTier2Id = null;
 			}
+			EmitSelection();
 		}
 
-		private static void ClearChildren(Node n)
+		private void EmitSelection()
 		{
-			for (int i = n.GetChildCount() - 1; i >= 0; i--)
-				n.GetChild(i).QueueFree();
+			EmitSignal(SignalName.SelectionChanged, MemberIndex, SelectedClassId,
+				SelectedTier1Ids.ToArray(), SelectedTier2Id);
 		}
 
-		private static void ApplyCardMargins(Control c)
+		// ---- UI helpers ----
+
+		private Label MakeSectionLabel(string text, float size, bool emphasize)
 		{
-			c.AddThemeConstantOverride("margin_left", 10);
-			c.AddThemeConstantOverride("margin_top", 8);
-			c.AddThemeConstantOverride("margin_right", 10);
-			c.AddThemeConstantOverride("margin_bottom", 8);
-		}
-
-		private void OnTier1Toggled(bool _pressed)
-		{
-			// Enforce "pick exactly two" interactively
-			var on = _t1Toggles.Where(t => t.ButtonPressed).ToList();
-			if (on.Count <= 2) return;
-
-			// Turn off the first one to keep max=2
-			on[0].ButtonPressed = false;
-		}
-
-		private void OnTier2Toggled(CheckBox who, bool pressed)
-		{
-			if (!pressed) return;
-
-			// Guarantee exclusivity in case ButtonGroup doesn’t
-			foreach (var other in _t2Radios)
+			var lbl = new Label
 			{
-				if (!ReferenceEquals(other, who) && other.ButtonPressed)
-					other.ButtonPressed = false;
+				Text = text,
+				HorizontalAlignment = HorizontalAlignment.Left,
+				VerticalAlignment = VerticalAlignment.Center
+			};
+			lbl.AddThemeFontSizeOverride("font_size", (int)(emphasize ? size + 1 : size));
+			lbl.AddThemeColorOverride("font_color", Colors.White);
+			return lbl;
+		}
+
+		/// <summary>Returns (tile container, toggle button) so caller can hook events.</summary>
+		private (Control tile, BaseButton btn) MakeIconToggleWithCaption(Texture2D? texture, string caption, string tooltip)
+		{
+			var v = new VBoxContainer { CustomMinimumSize = new Vector2(IconSize.X, IconSize.Y + 22f) };
+			v.AddThemeConstantOverride("separation", 4);
+
+			BaseButton btn;
+			if (texture != null)
+			{
+				var tbtn = new TextureButton
+				{
+					StretchMode = TextureButton.StretchModeEnum.KeepAspectCentered,
+					CustomMinimumSize = IconSize,
+					TooltipText = tooltip ?? caption ?? "?"
+				};
+				tbtn.TextureNormal = texture;
+				tbtn.ToggleMode = true;
+				btn = tbtn;
 			}
+			else
+			{
+				var b = new Button
+				{
+					Text = "?",
+					CustomMinimumSize = IconSize,
+					TooltipText = tooltip ?? caption ?? "?"
+				};
+				b.ToggleMode = true;
+				btn = b;
+			}
+			v.AddChild(btn);
+
+			var cap = new Label
+			{
+				Text = string.IsNullOrWhiteSpace(caption) ? "?" : caption,
+				HorizontalAlignment = HorizontalAlignment.Center
+			};
+			cap.AddThemeFontSizeOverride("font_size", (int)CaptionFontSize);
+			cap.ClipText = true;
+			v.AddChild(cap);
+
+			return (v, btn);
+		}
+
+		private static string SafeName(string? name, string? id)
+		{
+			if (!string.IsNullOrWhiteSpace(name)) return name.Trim();
+			if (!string.IsNullOrWhiteSpace(id)) return id.Trim();
+			return "?";
+		}
+
+		private static string MakeSpellTooltip(SpellDef sp)
+		{
+			var n = SafeName(sp?.Name, sp?.Id);
+			var d = string.IsNullOrWhiteSpace(sp?.Text) ? "(no description)" : sp.Text.Trim();
+			return $"{n}\n{d}";
 		}
 	}
 }

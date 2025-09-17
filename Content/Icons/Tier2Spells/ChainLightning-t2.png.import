@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cy133ynkflus0"
-path="res://.godot/imported/ChainLightning-t2.png-56596449917730aa40a0697ebe1c923a.ctex"
+uid="uid://wu4ahfh3mxrw"
+path="res://.godot/imported/chainlightning-t2.png-90602309be3766286a4cbfc25c794bdf.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier2Spells/ChainLightning-t2.png"
-dest_files=["res://.godot/imported/ChainLightning-t2.png-56596449917730aa40a0697ebe1c923a.ctex"]
+source_file="res://Content/Icons/Tier2Spells/chainlightning-t2.png"
+dest_files=["res://.godot/imported/chainlightning-t2.png-90602309be3766286a4cbfc25c794bdf.ctex"]
 
 [params]
 

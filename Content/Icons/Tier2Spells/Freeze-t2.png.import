@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnok8x4n5cu75"
-path="res://.godot/imported/Freeze-t2.png-ab5ef4c10c825bca1adec22e03030cd2.ctex"
+uid="uid://dd3cctggkcxht"
+path="res://.godot/imported/freeze-t2.png-450c803efa2e79b49ac053d00eb5b5db.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier2Spells/Freeze-t2.png"
-dest_files=["res://.godot/imported/Freeze-t2.png-ab5ef4c10c825bca1adec22e03030cd2.ctex"]
+source_file="res://Content/Icons/Tier2Spells/freeze-t2.png"
+dest_files=["res://.godot/imported/freeze-t2.png-450c803efa2e79b49ac053d00eb5b5db.ctex"]
 
 [params]
 

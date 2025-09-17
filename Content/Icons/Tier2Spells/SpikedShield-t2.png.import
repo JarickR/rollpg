@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bt343wvtikrp6"
-path="res://.godot/imported/SpikedShield-t2.png-4f6dbb70f78511b697485451e9769c8b.ctex"
+uid="uid://c6svqn3jk6tdk"
+path="res://.godot/imported/spikedshield-t2.png-2e3e8ac588cb74258a97c64017d6dcfc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier2Spells/SpikedShield-t2.png"
-dest_files=["res://.godot/imported/SpikedShield-t2.png-4f6dbb70f78511b697485451e9769c8b.ctex"]
+source_file="res://Content/Icons/Tier2Spells/spikedshield-t2.png"
+dest_files=["res://.godot/imported/spikedshield-t2.png-2e3e8ac588cb74258a97c64017d6dcfc.ctex"]
 
 [params]
 

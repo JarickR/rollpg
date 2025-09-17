@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bbc6r4bwt6dyw"
-path="res://.godot/imported/ChainLighning-t3.png-f69d17574b51395a5b00133386bb1a38.ctex"
+uid="uid://dwyug0twmoay8"
+path="res://.godot/imported/chainlighning-t3.png-614d088bffafa262a7186881fe116cd3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier3Spells/ChainLighning-t3.png"
-dest_files=["res://.godot/imported/ChainLighning-t3.png-f69d17574b51395a5b00133386bb1a38.ctex"]
+source_file="res://Content/Icons/Tier3Spells/chainlighning-t3.png"
+dest_files=["res://.godot/imported/chainlighning-t3.png-614d088bffafa262a7186881fe116cd3.ctex"]
 
 [params]
 

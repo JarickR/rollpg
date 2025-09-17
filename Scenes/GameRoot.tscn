@@ -1,0 +1,122 @@
+[gd_scene load_steps=7 format=3 uid="uid://dalkd4gr4dlrq"]
+
+[ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1"]
+[ext_resource type="Script" uid="uid://cw3b8jlbg5fa4" path="res://Scripts/Godot/BattleLogPanel.cs" id="2"]
+[ext_resource type="Script" uid="uid://wcwow2wkvylk" path="res://Scripts/Godot/EnemyPanel.cs" id="2_p0hwe"]
+[ext_resource type="Script" uid="uid://ejg081jx0w6i" path="res://Scripts/Godot/BattleRoot.cs" id="2_vt32t"]
+[ext_resource type="Script" uid="uid://6u82jtp4tv0s" path="res://Scripts/Godot/HeroPanel.cs" id="4_fyhyk"]
+[ext_resource type="Script" uid="uid://dnibjj4mf5psp" path="res://Scripts/Engine/Loadout/LoadoutScreen.cs" id="5_fyhyk"]
+
+[node name="GameRoot" type="Control"]
+z_index = 100
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1")
+LoadoutScreenPath = NodePath("LoadoutScreen")
+BattleRootPath = NodePath("BattleRoot")
+
+[node name="BattleRoot" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_vt32t")
+HeroPanelPath = NodePath("HSplitContainer/LeftCol/HeroPanel")
+LogBoxPath = NodePath("HSplitContainer/LeftCol/LogBox")
+
+[node name="HSplitContainer" type="HSplitContainer" parent="BattleRoot"]
+layout_mode = 0
+offset_right = 420.0
+offset_bottom = 236.0
+
+[node name="LeftCol" type="VBoxContainer" parent="BattleRoot/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EnemyPanel" type="VBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
+layout_mode = 2
+script = ExtResource("2_p0hwe")
+
+[node name="HSeparator" type="HSeparator" parent="BattleRoot/HSplitContainer/LeftCol"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_stretch_ratio = 0.0
+
+[node name="LogBox" type="VBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+script = ExtResource("2")
+
+[node name="HSeparator2" type="HSeparator" parent="BattleRoot/HSplitContainer/LeftCol"]
+layout_mode = 2
+
+[node name="HeroPanel" type="VBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("4_fyhyk")
+
+[node name="HeroArea" type="VBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_stretch_ratio = 3.0
+
+[node name="Flex" type="Control" parent="BattleRoot/HSplitContainer/LeftCol"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Buttons" type="HBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="Main_ButtonsRow#UpgradeBtn" type="Button" parent="BattleRoot/HSplitContainer/LeftCol/Buttons"]
+layout_mode = 2
+text = "Upgrade"
+
+[node name="Main_ButtonsRow#D6Btn" type="Button" parent="BattleRoot/HSplitContainer/LeftCol/Buttons"]
+layout_mode = 2
+text = "d6"
+
+[node name="LoadoutScreen" type="Control" parent="."]
+unique_name_in_owner = true
+top_level = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_fyhyk")
+MemberCardsRootPath = NodePath("MemberCardsRoot")
+PartySizeSpinPath = NodePath("PartySizeSpin")
+
+[node name="MemberCardsRoot" type="GridContainer" parent="LoadoutScreen"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 5
+
+[node name="PartySizeSpin" type="SpinBox" parent="LoadoutScreen"]
+unique_name_in_owner = true
+layout_mode = 0
+offset_right = 86.5625
+offset_bottom = 31.0
+min_value = 1.0
+max_value = 10.0
+value = 1.0

@@ -44,7 +44,7 @@ namespace DiceArena.GodotUI
 			EnsureBuilt();
 
 			_title!.Text = $"{name} (T{tier})";
-			_icon!.Texture = icon ?? IconLibrary.Transparent1x1();
+			_icon!.Texture = icon ?? IconLibrary.Transparent1x1;
 			_stats!.Text = $"HP {hp}/{hpMax}  ARM {armor}";
 		}
 	}

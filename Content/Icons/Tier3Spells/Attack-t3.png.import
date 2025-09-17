@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://casxnmlid68w5"
-path="res://.godot/imported/Attack-t3.png-93180855bca4cae6f5c24a460eecf34c.ctex"
+uid="uid://ce5u1v2i30u1p"
+path="res://.godot/imported/attack-t3.png-6b24fe4d80f8a1081ecaa2401460f2ea.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier3Spells/Attack-t3.png"
-dest_files=["res://.godot/imported/Attack-t3.png-93180855bca4cae6f5c24a460eecf34c.ctex"]
+source_file="res://Content/Icons/Tier3Spells/attack-t3.png"
+dest_files=["res://.godot/imported/attack-t3.png-6b24fe4d80f8a1081ecaa2401460f2ea.ctex"]
 
 [params]
 

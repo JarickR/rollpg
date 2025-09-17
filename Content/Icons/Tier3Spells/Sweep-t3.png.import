@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cxyo2ksnglg7d"
-path="res://.godot/imported/Sweep-t3.png-baceed958e38fd2b252fb57edaf183a6.ctex"
+uid="uid://c8iltv3i57o47"
+path="res://.godot/imported/sweep-t3.png-2e6407b1ff43db4f76388e4b5ceef391.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier3Spells/Sweep-t3.png"
-dest_files=["res://.godot/imported/Sweep-t3.png-baceed958e38fd2b252fb57edaf183a6.ctex"]
+source_file="res://Content/Icons/Tier3Spells/sweep-t3.png"
+dest_files=["res://.godot/imported/sweep-t3.png-2e6407b1ff43db4f76388e4b5ceef391.ctex"]
 
 [params]
 

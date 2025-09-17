@@ -1,214 +1,240 @@
-// Scripts/Engine/Loadout/LoadoutScreen.cs
+// Scripts/Godot/LoadoutScreen.cs
+using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
+using System.Reflection;
 using DiceArena.Engine.Content;
+using DiceArena.Engine.Loadout; // Log + LoadoutMemberCard
 
-namespace DiceArena.Engine.Loadout
+namespace DiceArena.GodotUI
 {
+	/// <summary>
+	/// Root Loadout screen node.
+	/// Public API:
+	///   - SetBundle(typeof(ContentDatabase)) or SetBundle(dbInstance)
+	///   - InjectContent(classes, t1, t2)
+	///   - Build() / BuildCards()
+	/// Emits SelectionChanged(int memberIndex, string? classId, string[] tier1Ids, string? tier2Id)
+	/// when any card changes selection.
+	/// </summary>
 	public partial class LoadoutScreen : Control
 	{
-		[Export] public int PartySize { get; set; } = 3;
+		[Export] public NodePath? MemberCardsRootPath { get; set; }
+		[Export] public NodePath? PartySizeSpinPath { get; set; }
 
-		public ContentBundle Bundle { get; set; } = default!;
+		[Export(PropertyHint.Range, "1,8,1")]
+		public int DefaultPartySize { get; set; } = 3;
 
-		private readonly List<LoadoutMemberCard> _cards = new();
+		[Export] public bool AutoBuild { get; set; } = false;
 
-		private Control _bgDim = null!;
-		private VBoxContainer _root = null!;
-		private HBoxContainer _topBar = null!;
-		private SpinBox _partySpin = null!;
-		private Button _rerollBtn = null!;
-		private Button _confirmBtn = null!;
-		private GridContainer _membersGrid = null!;
+		// Internal content slices
+		private List<ClassDef> _classes = new();
+		private List<SpellDef> _tier1 = new();
+		private List<SpellDef> _tier2 = new();
+		private bool _hasContent = false;
+		private bool _needsBuild = false; // set when a build is requested before content arrives
 
 		public override void _Ready()
 		{
-			// fallback if Game.cs didn’t inject
-			if (Bundle == null)
-			{
-				GD.PushWarning("[LoadoutScreen] No bundle injected; loading fallback from res://Content");
-				Bundle = ContentDatabase.LoadFromFolder("res://Content");
-			}
+			EnsureSpinDefaults();
+			WirePartySizeSpin();
 
-			BuildUI();
-			RebuildMembers(Mathf.Clamp(PartySize, 1, 4));
-			RerollAllOffers();
+			if (AutoBuild && _hasContent)
+				SafeBuild();
+			else if (AutoBuild && !_hasContent)
+				_needsBuild = true;
 		}
 
-		private void BuildUI()
+		// -------- Public API (instance methods) --------
+
+		/// <summary>
+		/// Accepts an instance or a Type for a static class exposing:
+		///   IEnumerable<ClassDef> GetAllClasses()
+		///   IEnumerable<SpellDef> GetSpellsByTier(int)
+		/// </summary>
+		public void SetBundle(object db)
 		{
-			// Full-screen dimmer — does NOT consume input
-			_bgDim = new PanelContainer
+			if (db == null) { Log.E("SetBundle: null db"); return; }
+
+			try
 			{
-				MouseFilter = MouseFilterEnum.Ignore,   // <-- don’t eat clicks
-				ZIndex = 5
-			};
-			_bgDim.AnchorRight = 1;  // full rect
-			_bgDim.AnchorBottom = 1;
-			var dim = new StyleBoxFlat { BgColor = new Color(0, 0, 0, 0.12f) };
-			_bgDim.AddThemeStyleboxOverride("panel", dim);
-			AddChild(_bgDim);
+				Type t; object? target = null;
+				if (db is Type dt) t = dt; else { t = db.GetType(); target = db; }
 
-			// Root UI that DOES receive input
-			_root = new VBoxContainer
-			{
-				MouseFilter = MouseFilterEnum.Stop,     // <-- do eat clicks
-				ZIndex = 10,
-				SizeFlagsHorizontal = SizeFlags.ExpandFill,
-				SizeFlagsVertical = SizeFlags.ExpandFill
-			};
-			_root.AnchorRight = 1;
-			_root.AnchorBottom = 1;
-			_root.AddThemeConstantOverride("separation", 12);
-			AddChild(_root);
+				var getAllClasses   = t.GetMethod("GetAllClasses",   BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, Type.EmptyTypes);
+				var getSpellsByTier = t.GetMethod("GetSpellsByTier", BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, new Type[] { typeof(int) });
 
-			// Top bar sits on its own solid panel (never blends)
-			var topPanel = new PanelContainer
-			{
-				MouseFilter = MouseFilterEnum.Stop,
-				ZIndex = 11
-			};
-			var topSb = new StyleBoxFlat { BgColor = new Color(0.15f, 0.15f, 0.15f, 1f) };
-			topPanel.AddThemeStyleboxOverride("panel", topSb);
-			_root.AddChild(topPanel);
-
-			_topBar = new HBoxContainer
-			{
-				MouseFilter = MouseFilterEnum.Stop
-			};
-			_topBar.AddThemeConstantOverride("separation", 8);
-			_topBar.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-			topPanel.AddChild(_topBar);
-
-			_topBar.AddChild(new Label { Text = "Party Size:" });
-
-			_partySpin = new SpinBox
-			{
-				MinValue = 1,
-				MaxValue = 4,
-				Step = 1,
-				Value = Mathf.Clamp(PartySize, 1, 4),
-				CustomMinimumSize = new Vector2(80, 0)
-			};
-			_partySpin.ValueChanged += v =>
-			{
-				GD.Print($"[Loadout] Party size -> {v}");
-				RebuildMembers((int)v);
-				RerollAllOffers();
-			};
-			_topBar.AddChild(_partySpin);
-
-			_rerollBtn = new Button { Text = "Re-roll Offers" };
-			_rerollBtn.Pressed += () =>
-			{
-				GD.Print("[Loadout] Re-roll pressed");
-				RerollAllOffers();
-			};
-			_topBar.AddChild(_rerollBtn);
-
-			_confirmBtn = new Button { Text = "Confirm Loadout" };
-			_confirmBtn.Pressed += () =>
-			{
-				GD.Print("[Loadout] Confirm pressed");
-				ConfirmLoadout();
-			};
-			_topBar.AddChild(_confirmBtn);
-
-			_membersGrid = new GridContainer
-			{
-				MouseFilter = MouseFilterEnum.Stop,
-				Columns = 1,
-				ZIndex = 10
-			};
-			_membersGrid.AddThemeConstantOverride("v_separation", 16);
-			_membersGrid.SizeFlagsHorizontal = SizeFlags.ExpandFill;
-			_membersGrid.SizeFlagsVertical = SizeFlags.ExpandFill;
-			_root.AddChild(_membersGrid);
-		}
-
-		private void RebuildMembers(int count)
-		{
-			_membersGrid.Columns = count <= 2 ? 1 : 2;
-
-			for (int i = _membersGrid.GetChildCount() - 1; i >= 0; i--)
-				_membersGrid.GetChild(i).QueueFree();
-			_cards.Clear();
-
-			var classes = Bundle.Classes.OrderBy(c => c.Name).ToList();
-
-			for (int i = 0; i < count; i++)
-			{
-				var panel = new PanelContainer { MouseFilter = MouseFilterEnum.Stop };
-				var inner = new VBoxContainer { MouseFilter = MouseFilterEnum.Stop };
-				panel.AddChild(inner);
-				inner.AddThemeConstantOverride("separation", 8);
-
-				var card = new LoadoutMemberCard { TitleText = $"Member {i + 1}" };
-				inner.AddChild(card);
-
-				_membersGrid.AddChild(panel);
-				_cards.Add(card);
-
-				card.Setup(Bundle, classes, Array.Empty<SpellDef>(), Array.Empty<SpellDef>());
-			}
-		}
-
-		private void RerollAllOffers()
-		{
-			foreach (var card in _cards)
-			{
-				var t1 = RollTierOffers(1, LoadoutRules.Tier1OfferCount).ToList();
-				var t2 = RollTierOffers(2, LoadoutRules.Tier2OfferCount).ToList();
-				card.Setup(Bundle, Bundle.Classes, t1, t2);
-			}
-		}
-
-		private IEnumerable<SpellDef> RollTierOffers(int tier, int count)
-		{
-			var pool = Bundle.Spells.Where(s => s.Tier == tier).ToList();
-			var picks = new List<SpellDef>(count);
-
-			for (int i = 0; i < count && pool.Count > 0; i++)
-			{
-				int idx = (int)(GD.Randi() % (uint)pool.Count);
-				picks.Add(pool[idx]);
-				pool.RemoveAt(idx);
-			}
-
-			return picks;
-		}
-
-		private void ConfirmLoadout()
-		{
-			var party = new PartyLoadout { PartySize = _cards.Count };
-
-			foreach (var card in _cards)
-			{
-				var m = new MemberLoadout
+				if (getAllClasses == null || getSpellsByTier == null)
 				{
-					ClassId = card.GetSelectedClassId() ?? string.Empty,
-					Tier1OfferIds = Bundle.Spells.Where(s => s.Tier == 1).Select(s => s.Id).ToList(),
-					Tier2OfferIds = Bundle.Spells.Where(s => s.Tier == 2).Select(s => s.Id).ToList()
-				};
+					Log.E("SetBundle: DB missing GetAllClasses() / GetSpellsByTier(int).");
+					return;
+				}
 
-				var (tier1, tier2) = card.GetPicks();
-				m.ChosenTier1SpellIds = new HashSet<string>(tier1);
-				m.ChosenTier2SpellId = tier2;
+				var classes = (getAllClasses.Invoke(target, null) as IEnumerable<ClassDef>) ?? Enumerable.Empty<ClassDef>();
+				var t1 = (getSpellsByTier.Invoke(target, new object[] { 1 }) as IEnumerable<SpellDef>) ?? Enumerable.Empty<SpellDef>();
+				var t2 = (getSpellsByTier.Invoke(target, new object[] { 2 }) as IEnumerable<SpellDef>) ?? Enumerable.Empty<SpellDef>();
 
-				party.Members.Add(m);
+				InjectContent(classes, t1, t2);
+				Log.I($"SetBundle: injected classes={_classes.Count}, t1={_tier1.Count}, t2={_tier2.Count}");
 			}
+			catch (Exception ex) { Log.E($"SetBundle reflection failed: {ex.Message}"); }
+		}
 
-			var (ok, badIndex, reason) = LoadoutSystem.ValidateParty(party);
-			if (!ok)
+		/// <summary>Explicit injection of slices you already loaded from JSON.</summary>
+		public void InjectContent(IEnumerable<ClassDef> classes, IEnumerable<SpellDef> tier1, IEnumerable<SpellDef> tier2)
+		{
+			_classes = classes?.ToList() ?? new();
+			_tier1 = tier1?.ToList() ?? new();
+			_tier2 = tier2?.ToList() ?? new();
+			_hasContent = true;
+
+			// Ensure the spin reflects the intended default (prevents "1 card" surprise)
+			var spin = GetNodeSafe<SpinBox>(PartySizeSpinPath);
+			if (GodotObject.IsInstanceValid(spin) && spin.Value < DefaultPartySize)
+				spin.Value = DefaultPartySize;
+
+			Log.I($"InjectContent: classes={_classes.Count}, t1={_tier1.Count}, t2={_tier2.Count}");
+
+			if (_needsBuild || AutoBuild)
 			{
-				GD.PushWarning($"Invalid party: Member {badIndex + 1}: {reason}");
+				_needsBuild = false;
+				SafeBuild();
+			}
+		}
+
+		/// <summary>Builds/rebuilds the member cards based on current slices and spin value.</summary>
+		public void BuildCards()
+		{
+			if (!_hasContent)
+			{
+				_needsBuild = true;
 				return;
 			}
 
-			GD.Print(LoadoutSystem.Describe(party, Bundle));
-			// TODO: hand off to battle scene here.
+			var memberRoot = GetNodeSafe<Container>(MemberCardsRootPath);
+			var partySpin  = GetNodeSafe<SpinBox>(PartySizeSpinPath);
+
+			if (!GodotObject.IsInstanceValid(memberRoot))
+			{
+				Log.E("BuildCards: MemberCardsRootPath invalid / unset.");
+				return;
+			}
+
+			int partySize = DefaultPartySize;
+			if (GodotObject.IsInstanceValid(partySpin))
+			{
+				if (partySpin.Value < DefaultPartySize) partySpin.Value = DefaultPartySize;
+				partySize = Mathf.Max(1, (int)partySpin.Value);
+			}
+
+			// If the root is a GridContainer, show all cards in one row:
+			if (memberRoot is GridContainer g)
+			{
+				g.Columns = Mathf.Max(1, partySize);
+				g.AddThemeConstantOverride("h_separation", 16);
+				g.AddThemeConstantOverride("v_separation", 16);
+			}
+
+			// Root layout guards
+			memberRoot.SetDeferred("custom_minimum_size", new Vector2(1280, 520));
+
+			// Clear old
+			for (int i = memberRoot.GetChildCount() - 1; i >= 0; i--)
+			{
+				var c = memberRoot.GetChild(i);
+				if (GodotObject.IsInstanceValid(c)) memberRoot.RemoveChild(c);
+				c.QueueFree();
+			}
+
+			// Build cards + wire signals
+			for (int i = 0; i < partySize; i++)
+			{
+				var card = new DiceArena.Engine.Loadout.LoadoutMemberCard();
+				if (card is Control cc)
+				{
+					cc.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
+					cc.SizeFlagsVertical   = Control.SizeFlags.ShrinkCenter;
+				}
+
+				memberRoot.AddChild(card);
+				card.Build(i, _classes, _tier1, _tier2);
+
+				// Bubble card selections up to the screen level
+				card.SelectionChanged += (int memberIndex, string? classId, string[] t1Ids, string? t2Id) =>
+				{
+					EmitSignal(SignalName.SelectionChanged, memberIndex, classId, t1Ids, t2Id);
+				};
+			}
+
+			memberRoot.SetDeferred("custom_minimum_size", new Vector2(1280, 520));
+			memberRoot.QueueRedraw();
+
+			var cols = (memberRoot as GridContainer)?.Columns ?? -1;
+			Log.V($"BuildCards complete: partySize={partySize}, rootChildren={memberRoot.GetChildCount()}, rootType={memberRoot.GetType().Name}, gridCols={cols}");
+
+			if (memberRoot.GetChildCount() == 0 && (_classes.Count == 0 && _tier1.Count == 0 && _tier2.Count == 0))
+				InsertEmergencyLabel("⚠ No content available");
+		}
+
+		// Convenience
+		public void Build() => BuildCards();
+
+		// -------- Internals --------
+
+		private void EnsureSpinDefaults()
+		{
+			var spin = GetNodeSafe<SpinBox>(PartySizeSpinPath);
+			if (!GodotObject.IsInstanceValid(spin)) return;
+
+			// Ensure sane config
+			if (spin.MinValue < 1) spin.MinValue = 1;
+			if (spin.MaxValue < 1) spin.MaxValue = 8;
+			if (spin.Step <= 0)    spin.Step     = 1;
+
+			if (spin.Value < 1)
+				spin.Value = DefaultPartySize;
+		}
+
+		private void WirePartySizeSpin()
+		{
+			var spin = GetNodeSafe<SpinBox>(PartySizeSpinPath);
+			if (!GodotObject.IsInstanceValid(spin)) return;
+			spin.ValueChanged += (double _) =>
+			{
+				if (!_hasContent) { _needsBuild = true; return; }
+				SafeBuild();
+			};
+		}
+
+		private void SafeBuild()
+		{
+			try { BuildCards(); }
+			catch (Exception ex) { Log.W($"BuildCards exception: {ex.Message}"); }
+		}
+
+		private void InsertEmergencyLabel(string text)
+		{
+			var memberRoot = GetNodeSafe<Container>(MemberCardsRootPath);
+			if (!GodotObject.IsInstanceValid(memberRoot)) return;
+
+			var label = new Label
+			{
+				Text = text,
+				HorizontalAlignment = HorizontalAlignment.Center,
+				VerticalAlignment = VerticalAlignment.Center,
+				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
+				SizeFlagsVertical = Control.SizeFlags.ExpandFill
+			};
+			memberRoot.AddChild(label);
+			label.SetDeferred("custom_minimum_size", new Vector2(640, 180));
+			memberRoot.QueueRedraw();
+		}
+
+		private T? GetNodeSafe<T>(NodePath? path) where T : class
+		{
+			if (path == null || path.IsEmpty) return null;
+			return base.GetNodeOrNull(path) as T;
 		}
 	}
 }

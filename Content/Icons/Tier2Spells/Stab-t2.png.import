@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://da2w74cof5s5"
-path="res://.godot/imported/Stab-t2.png-a75120340d8673d1822788fde66178b3.ctex"
+uid="uid://cwk8dpx8c501p"
+path="res://.godot/imported/stab-t2.png-0655cb2468d30347ceef251f803c5693.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier2Spells/Stab-t2.png"
-dest_files=["res://.godot/imported/Stab-t2.png-a75120340d8673d1822788fde66178b3.ctex"]
+source_file="res://Content/Icons/Tier2Spells/stab-t2.png"
+dest_files=["res://.godot/imported/stab-t2.png-0655cb2468d30347ceef251f803c5693.ctex"]
 
 [params]
 

@@ -1,175 +1,133 @@
+// Scripts/Godot/IconLibrary.cs
 using Godot;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
-namespace DiceArena.GodotUI
+namespace DiceArena.Engine.Loadout
 {
 	/// <summary>
-	/// Centralized loader for individual PNG thumbnails (500x500) and misc helpers.
-	/// Adjust the folder constants below to match your project paths.
+	/// Robust icon resolver with caching.
+	/// Looks in your project tree:
+	///   Classes:      res://art/Icons/Classes/<name>.(png|svg|webp)
+	///   Tier1 Spells: res://art/Icons/Tier1Spells/<name>.(png|svg|webp)
+	///   Tier2 Spells: res://art/Icons/Tier2Spells/<name>.(png|svg|webp)
+	///   Tier3 Spells: res://art/Icons/Tier3Spells/<name>.(png|svg|webp)  (supported if you use it)
+	/// Falls back to res://icon.svg when not found.
+	/// Filename matching is forgiving: hyphens/underscores/spaces removed, pascalized variants, with/without "-1"/"-2" tier suffix.
 	/// </summary>
 	public static class IconLibrary
 	{
-		// ---------- Folders (adjust to your actual res:// layout) ----------
-		private const string ENEMY_T1_DIR = "res://art/enemies/tier1/";
-		private const string ENEMY_T2_DIR = "res://art/enemies/tier2/";
-		private const string ENEMY_BOSS_DIR = "res://art/enemies/bosses/";
+		// ---- Paths (adjust if you ever move your folders) ----
+		private const string ClassesDir = "res://art/Icons/Classes";
+		private const string Tier1Dir   = "res://art/Icons/Tier1Spells";
+		private const string Tier2Dir   = "res://art/Icons/Tier2Spells";
+		private const string Tier3Dir   = "res://art/Icons/Tier3Spells"; // optional
+		private const string Fallback   = "res://icon.svg";
 
-		private const string CLASS_DIR = "res://art/classes/";    // e.g., thief.png, judge.png, …
-		private const string SPELL_DIR = "res://art/spells/";     // e.g., attack.png, shield.png, …
+		private static readonly string[] Exts = { ".png", ".svg", ".webp" };
 
-		// If you also have status icons:
-		private const string STATUS_DIR = "res://art/status/";    // e.g., poison.png, bomb.png, …
+		// Simple path->texture cache
+		private static readonly Dictionary<string, Texture2D> Cache = new();
 
-		// ---------- Caches ----------
-		private static readonly Dictionary<string, Texture2D> _texCache = new();
+		// ------------- Public API -------------
 
-		// Public transparent 1×1 as a safe fallback
-		public static Texture2D Transparent1x1()
+		public static Texture2D GetClassTexture(string id)
 		{
-			var img = Image.CreateEmpty(1, 1, false, Image.Format.Rgba8);
-			img.Fill(Colors.Transparent);
-			return ImageTexture.CreateFromImage(img);
+			// Try candidates inside ClassesDir; if not found, use fallback.
+			return ResolveTexture(ClassesDir, id)
+				   ?? Load(Fallback)
+				   ?? new ImageTexture(); // never null, but prevents NRE
 		}
 
-		/// <summary>Safe loader with caching.</summary>
-		public static Texture2D LoadTexture(string path)
+		/// <summary>
+		/// Returns a spell icon. Tries variants with and without a trailing "-tier" suffix.
+		/// Example: "spiked-shield-1" will first look for "spiked-shield", then "spiked-shield-1".
+		/// </summary>
+		public static Texture2D GetSpellTexture(string id, int tier)
 		{
-			if (string.IsNullOrWhiteSpace(path))
-				return Transparent1x1();
-
-			if (_texCache.TryGetValue(path, out var tex))
-				return tex;
-
-			var loaded = GD.Load<Texture2D>(path);
-			if (loaded != null)
+			var dir = tier switch
 			{
-				_texCache[path] = loaded;
-				return loaded;
-			}
-			return Transparent1x1();
-		}
-
-		// ---------- Enemy thumbnails (individual files) ----------
-		// Declare your files explicitly so we don’t need to scan directories at runtime.
-		// Put the exact filenames you have in your project (500x500 PNGs).
-
-		private static readonly string[] T1_ENEMIES =
-		{
-			ENEMY_T1_DIR + "bat.png",
-			ENEMY_T1_DIR + "slime.png",
-			ENEMY_T1_DIR + "skeleton.png",
-			ENEMY_T1_DIR + "wolf.png",
-			ENEMY_T1_DIR + "goblin.png",
-		};
-
-		private static readonly string[] T2_ENEMIES =
-		{
-			ENEMY_T2_DIR + "orc.png",
-			ENEMY_T2_DIR + "ogre.png",
-			ENEMY_T2_DIR + "wraith.png",
-			ENEMY_T2_DIR + "elemental.png",
-		};
-
-		private static readonly string[] BOSS_ENEMIES =
-		{
-			ENEMY_BOSS_DIR + "dragon.png",
-			ENEMY_BOSS_DIR + "lich_king.png",
-			ENEMY_BOSS_DIR + "behemoth.png",
-		};
-
-		public static List<Texture2D> GetEnemiesForTier(int tier)
-		{
-			var list = new List<Texture2D>();
-			var src = tier switch
-			{
-				1 => T1_ENEMIES,
-				2 => T2_ENEMIES,
-				3 => BOSS_ENEMIES,
-				_ => T1_ENEMIES,
+				1 => Tier1Dir,
+				2 => Tier2Dir,
+				3 => Tier3Dir, // supported if you have this folder; otherwise we'll fall back
+				_ => Tier1Dir
 			};
 
-			foreach (var p in src)
-				list.Add(LoadTexture(p));
+			var baseId = StripTierSuffix(id);
 
-			return list;
+			return ResolveTexture(dir, baseId)
+				   ?? ResolveTexture(dir, id)
+				   ?? Load(Fallback)
+				   ?? new ImageTexture();
 		}
 
-		/// <summary>Return a random enemy icon for the tier.</summary>
-		public static Texture2D GetRandomEnemyIcon(int tier)
-		{
-			var pool = GetEnemiesForTier(tier);
-			if (pool.Count == 0) return Transparent1x1();
+		/// <summary>Optional: clears the in-memory cache (e.g., if you hot-swap art while running).</summary>
+		public static void ClearCache() => Cache.Clear();
 
-			var rng = new RandomNumberGenerator();
-			rng.Randomize();
-			var idx = rng.RandiRange(0, pool.Count - 1);
-			return pool[idx];
+		// ------------- Internals -------------
+
+		private static Texture2D? ResolveTexture(string baseDir, string raw)
+		{
+			if (string.IsNullOrWhiteSpace(raw)) return null;
+
+			foreach (var name in BuildCandidates(raw))
+			{
+				foreach (var ext in Exts)
+				{
+					var path = $"{baseDir}/{name}{ext}";
+					var tex = Load(path);
+					if (tex != null) return tex;
+				}
+			}
+			return null;
 		}
 
-		// ---------- Class logos (individual files) ----------
-		// Keys must match your Hero.ClassId / class keys used in UI.
-
-		private static readonly Dictionary<string, string> CLASS_LOGOS = new(StringComparer.OrdinalIgnoreCase)
+		private static IEnumerable<string> BuildCandidates(string raw)
 		{
-			["thief"]     = CLASS_DIR + "thief.png",
-			["judge"]     = CLASS_DIR + "judge.png",
-			["tank"]      = CLASS_DIR + "tank.png",
-			["vampire"]   = CLASS_DIR + "vampire.png",
-			["king"]      = CLASS_DIR + "king.png",
-			["lich"]      = CLASS_DIR + "lich.png",
-			["paladin"]   = CLASS_DIR + "paladin.png",
-			["barbarian"] = CLASS_DIR + "barbarian.png",
-			["bard"]      = CLASS_DIR + "bard.png",
-			["warden"]    = CLASS_DIR + "warden.png",
-		};
+			// Common variants: lowercase, hyphens, underscores, no separators, PascalCase
+			raw = raw.Trim();
+			var lower   = raw.ToLowerInvariant();
+			var hyphen  = lower.Replace("_", "-").Replace(" ", "-");
+			var unders  = lower.Replace("-", "_").Replace(" ", "_");
+			var noSep   = Regex.Replace(lower, @"[\s_\-]", "");
+			var pascal  = ToPascal(noSep);
 
-		public static Texture2D GetClassLogoByKey(string classKey)
-		{
-			if (string.IsNullOrWhiteSpace(classKey)) return Transparent1x1();
-			return CLASS_LOGOS.TryGetValue(classKey, out var path) ? LoadTexture(path) : Transparent1x1();
+			// Try in order most likely to match hand-named assets
+			return new[] { lower, hyphen, unders, noSep, pascal }.Distinct();
 		}
 
-		// ---------- Spell icons (individual files) ----------
-		// Map spell keys/names to files; adjust to your exact filenames.
-
-		private static readonly Dictionary<string, string> SPELL_ICONS = new(StringComparer.OrdinalIgnoreCase)
+		private static string ToPascal(string s)
 		{
-			// Tier 1
-			["attack"]   = SPELL_DIR + "attack.png",
-			["heart"]    = SPELL_DIR + "heart.png",
-			["shield"]   = SPELL_DIR + "shield.png",   // “shield” applies armor (your note)
-			["dash"]     = SPELL_DIR + "dash.png",
-			["stab"]     = SPELL_DIR + "stab.png",
-			["lightning"]= SPELL_DIR + "lightning.png",
-			["ice"]      = SPELL_DIR + "ice.png",
-			["thorns"]   = SPELL_DIR + "thorns.png",
+			if (string.IsNullOrEmpty(s)) return s;
+			// If separators slipped through, normalize them
+			var parts = Regex.Split(s, @"[\s_\-]+").Where(p => p.Length > 0);
+			return string.Concat(parts.Select(p => char.ToUpperInvariant(p[0]) + (p.Length > 1 ? p.Substring(1) : "")));
+		}
 
-			// Tier 2
-			["bomb"]       = SPELL_DIR + "bomb.png",
-			["poison"]     = SPELL_DIR + "poison.png",
-			["yin_yang"]   = SPELL_DIR + "yin_yang.png",
-			["backstab"]   = SPELL_DIR + "backstab.png",
-			["lightning+"] = SPELL_DIR + "lightning_plus.png",
-			["freeze"]     = SPELL_DIR + "freeze.png",
-			["shield+"]    = SPELL_DIR + "shield_plus.png",
-			["thorns+"]    = SPELL_DIR + "thorns_plus.png",
-
-			// Tier 3 (examples)
-			["attack++"]   = SPELL_DIR + "attack_plus_plus.png",
-			["heart++"]    = SPELL_DIR + "heart_plus_plus.png",
-			["shield++"]   = SPELL_DIR + "shield_plus_plus.png",
-			["dash++"]     = SPELL_DIR + "dash_plus_plus.png",
-			["lightning++"]= SPELL_DIR + "lightning_plus_plus.png",
-			["ice++"]      = SPELL_DIR + "ice_plus_plus.png",
-			["yin_yang++"] = SPELL_DIR + "yin_yang_plus_plus.png",
-			["defensive"]  = SPELL_DIR + "defensive.png",
-		};
-
-		public static Texture2D GetSpellIconByName(string key)
+		private static string StripTierSuffix(string id)
 		{
-			if (string.IsNullOrWhiteSpace(key)) return Transparent1x1();
-			return SPELL_ICONS.TryGetValue(key, out var path) ? LoadTexture(path) : Transparent1x1();
+			// e.g. "spiked-shield-1" -> "spiked-shield"
+			if (string.IsNullOrWhiteSpace(id)) return "";
+			return Regex.Replace(id.Trim(), @"-(\d+)$", "");
+		}
+
+		private static Texture2D? Load(string path)
+		{
+			if (string.IsNullOrWhiteSpace(path)) return null;
+			if (Cache.TryGetValue(path, out var cached)) return cached;
+
+			if (ResourceLoader.Exists(path))
+			{
+				var tex = ResourceLoader.Load<Texture2D>(path);
+				if (tex != null)
+				{
+					Cache[path] = tex;
+					return tex;
+				}
+			}
+			return null;
 		}
 	}
 }

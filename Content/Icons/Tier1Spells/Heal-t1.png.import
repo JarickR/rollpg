@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dgwmdct5e066k"
-path="res://.godot/imported/Heal-t1.png-89094038db5eebb109fcaaaeb4241878.ctex"
+uid="uid://bqkyvc4ph2fvf"
+path="res://.godot/imported/heal-t1.png-aa5e309a537dbc35e7055be8ebfde51c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Tier1Spells/Heal-t1.png"
-dest_files=["res://.godot/imported/Heal-t1.png-89094038db5eebb109fcaaaeb4241878.ctex"]
+source_file="res://Content/Icons/Tier1Spells/heal-t1.png"
+dest_files=["res://.godot/imported/heal-t1.png-aa5e309a537dbc35e7055be8ebfde51c.ctex"]
 
 [params]
 

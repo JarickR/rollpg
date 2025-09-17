@@ -1,21 +1,17 @@
+// Scripts/Engine/Loadout/LoadoutScreen.cs
+// DEPRECATED SHIM: The real LoadoutScreen lives in DiceArena.GodotUI.LoadoutScreen.
+// This stub exists only to avoid duplicate types and compile errors.
+// Do not reference this class anywhere.
+
 using Godot;
 
-namespace DiceArena.GodotUI
+namespace DiceArena.Engine.Loadout
 {
-	public static class Log
+	/// <summary>
+	/// Deprecated placeholder. Use DiceArena.GodotUI.LoadoutScreen instead.
+	/// </summary>
+	public partial class Loadout_Deprecated_IgnoreMe : Control
 	{
-		private static System.Action<string, Color?>? _sink;
-
-		public static void Attach(BattleLogPanel panel)
-		{
-			_sink = panel.AppendLine;
-		}
-
-		public static void Detach() => _sink = null;
-
-		public static void Info(string msg)   => _sink?.Invoke(msg, null);
-		public static void Damage(string msg) => _sink?.Invoke(msg, Colors.IndianRed);
-		public static void Heal(string msg)   => _sink?.Invoke(msg, Colors.SeaGreen);
-		public static void System(string msg) => _sink?.Invoke(msg, Colors.SlateGray);
+		// Intentionally empty.
 	}
 }
