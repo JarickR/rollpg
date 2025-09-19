@@ -1,133 +1,127 @@
-// Scripts/Godot/IconLibrary.cs
-using Godot;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+using Godot;
 
-namespace DiceArena.Engine.Loadout
+namespace DiceArena.Godot
 {
 	/// <summary>
-	/// Robust icon resolver with caching.
-	/// Looks in your project tree:
-	///   Classes:      res://art/Icons/Classes/<name>.(png|svg|webp)
-	///   Tier1 Spells: res://art/Icons/Tier1Spells/<name>.(png|svg|webp)
-	///   Tier2 Spells: res://art/Icons/Tier2Spells/<name>.(png|svg|webp)
-	///   Tier3 Spells: res://art/Icons/Tier3Spells/<name>.(png|svg|webp)  (supported if you use it)
-	/// Falls back to res://icon.svg when not found.
-	/// Filename matching is forgiving: hyphens/underscores/spaces removed, pascalized variants, with/without "-1"/"-2" tier suffix.
+	/// Centralized icon loader + nearest-neighbor scaler + cache.
+	/// Looks up icons under:
+	///   Classes: res://Content/Icons/Classes/{classId}.png
+	///   Spells : res://Content/Icons/Spells/{spellId}-t{tier}.png
+	///
+	/// Also tries "plus"/"plusplus" alternates for tier 2/3 if base name not found.
 	/// </summary>
 	public static class IconLibrary
 	{
-		// ---- Paths (adjust if you ever move your folders) ----
-		private const string ClassesDir = "res://art/Icons/Classes";
-		private const string Tier1Dir   = "res://art/Icons/Tier1Spells";
-		private const string Tier2Dir   = "res://art/Icons/Tier2Spells";
-		private const string Tier3Dir   = "res://art/Icons/Tier3Spells"; // optional
-		private const string Fallback   = "res://icon.svg";
+		public const string ClassDir = "res://Content/Icons/Classes";
+		public const string SpellDir = "res://Content/Icons/Spells";
 
-		private static readonly string[] Exts = { ".png", ".svg", ".webp" };
+		private static readonly Dictionary<string, Texture2D> _cache = new();
+		private static ImageTexture? _transparent1x1;
 
-		// Simple path->texture cache
-		private static readonly Dictionary<string, Texture2D> Cache = new();
+		/// <summary>1x1 fully transparent pixel texture.</summary>
+		public static ImageTexture Transparent1x1 => _transparent1x1 ??= CreateTransparent();
 
-		// ------------- Public API -------------
-
-		public static Texture2D GetClassTexture(string id)
+		/// <summary>Clear all cached textures (called once on boot or when reloading content).</summary>
+		public static void Clear()
 		{
-			// Try candidates inside ClassesDir; if not found, use fallback.
-			return ResolveTexture(ClassesDir, id)
-				   ?? Load(Fallback)
-				   ?? new ImageTexture(); // never null, but prevents NRE
+			_cache.Clear();
+			// Keep the tiny transparent around; it’s fine to reuse.
 		}
 
-		/// <summary>
-		/// Returns a spell icon. Tries variants with and without a trailing "-tier" suffix.
-		/// Example: "spiked-shield-1" will first look for "spiked-shield", then "spiked-shield-1".
-		/// </summary>
-		public static Texture2D GetSpellTexture(string id, int tier)
+		/// <summary>Get a class icon scaled to the requested pixel size.</summary>
+		public static Texture2D GetClassTexture(string classId, int size)
 		{
-			var dir = tier switch
+			if (string.IsNullOrWhiteSpace(classId) || size <= 0)
+				return Transparent1x1;
+
+			var key = $"class:{classId}:{size}";
+			if (_cache.TryGetValue(key, out var tex))
+				return tex;
+
+			var fname = $"{ClassDir}/{Sanitize(classId)}.png";
+			tex = LoadAndScale(fname, size) ?? Transparent1x1;
+			_cache[key] = tex;
+			return tex;
+		}
+
+		/// <summary>Get a spell icon by spell id + tier (1..3) scaled to size.</summary>
+		public static Texture2D GetSpellTexture(string spellId, int tier, int size)
+		{
+			if (string.IsNullOrWhiteSpace(spellId) || tier < 1 || tier > 3 || size <= 0)
+				return Transparent1x1;
+
+			var key = $"spell:{spellId}:t{tier}:{size}";
+			if (_cache.TryGetValue(key, out var tex))
+				return tex;
+
+			var baseName = Sanitize(spellId);
+			// Primary: "{name}-t{tier}.png"
+			string[] candidates =
 			{
-				1 => Tier1Dir,
-				2 => Tier2Dir,
-				3 => Tier3Dir, // supported if you have this folder; otherwise we'll fall back
-				_ => Tier1Dir
+				$"{SpellDir}/{baseName}-t{tier}.png",
+				// Alternates the project uses:
+				// tier 2: "{name}plus-t2.png"
+				// tier 3: "{name}plusplus-t3.png"
+				tier == 2 ? $"{SpellDir}/{baseName}plus-t2.png" : null,
+				tier == 3 ? $"{SpellDir}/{baseName}plusplus-t3.png" : null,
 			};
 
-			var baseId = StripTierSuffix(id);
-
-			return ResolveTexture(dir, baseId)
-				   ?? ResolveTexture(dir, id)
-				   ?? Load(Fallback)
-				   ?? new ImageTexture();
-		}
-
-		/// <summary>Optional: clears the in-memory cache (e.g., if you hot-swap art while running).</summary>
-		public static void ClearCache() => Cache.Clear();
-
-		// ------------- Internals -------------
-
-		private static Texture2D? ResolveTexture(string baseDir, string raw)
-		{
-			if (string.IsNullOrWhiteSpace(raw)) return null;
-
-			foreach (var name in BuildCandidates(raw))
+			foreach (var path in candidates)
 			{
-				foreach (var ext in Exts)
-				{
-					var path = $"{baseDir}/{name}{ext}";
-					var tex = Load(path);
-					if (tex != null) return tex;
-				}
-			}
-			return null;
-		}
-
-		private static IEnumerable<string> BuildCandidates(string raw)
-		{
-			// Common variants: lowercase, hyphens, underscores, no separators, PascalCase
-			raw = raw.Trim();
-			var lower   = raw.ToLowerInvariant();
-			var hyphen  = lower.Replace("_", "-").Replace(" ", "-");
-			var unders  = lower.Replace("-", "_").Replace(" ", "_");
-			var noSep   = Regex.Replace(lower, @"[\s_\-]", "");
-			var pascal  = ToPascal(noSep);
-
-			// Try in order most likely to match hand-named assets
-			return new[] { lower, hyphen, unders, noSep, pascal }.Distinct();
-		}
-
-		private static string ToPascal(string s)
-		{
-			if (string.IsNullOrEmpty(s)) return s;
-			// If separators slipped through, normalize them
-			var parts = Regex.Split(s, @"[\s_\-]+").Where(p => p.Length > 0);
-			return string.Concat(parts.Select(p => char.ToUpperInvariant(p[0]) + (p.Length > 1 ? p.Substring(1) : "")));
-		}
-
-		private static string StripTierSuffix(string id)
-		{
-			// e.g. "spiked-shield-1" -> "spiked-shield"
-			if (string.IsNullOrWhiteSpace(id)) return "";
-			return Regex.Replace(id.Trim(), @"-(\d+)$", "");
-		}
-
-		private static Texture2D? Load(string path)
-		{
-			if (string.IsNullOrWhiteSpace(path)) return null;
-			if (Cache.TryGetValue(path, out var cached)) return cached;
-
-			if (ResourceLoader.Exists(path))
-			{
-				var tex = ResourceLoader.Load<Texture2D>(path);
+				if (string.IsNullOrEmpty(path)) continue;
+				tex = LoadAndScale(path, size);
 				if (tex != null)
 				{
-					Cache[path] = tex;
+					_cache[key] = tex;
 					return tex;
 				}
 			}
-			return null;
+
+			// Not found → transparent fallback
+			_cache[key] = Transparent1x1;
+			return Transparent1x1;
+		}
+
+		// ---------- helpers ----------
+
+		private static string Sanitize(string id)
+		{
+			// Normalize ids to file names like "chain lightning" -> "chainlightning"
+			// (your files are "name-t1.png", all lowercase, no spaces)
+			Span<char> buf = stackalloc char[id.Length];
+			int j = 0;
+			foreach (var ch in id)
+			{
+				if (char.IsLetterOrDigit(ch))
+					buf[j++] = char.ToLowerInvariant(ch);
+			}
+			return new string(buf[..j]);
+		}
+
+		private static Texture2D? LoadAndScale(string resPath, int size)
+		{
+			// Prefer loading Image directly so we can resize with Nearest.
+			if (!FileAccess.FileExists(resPath))
+				return null;
+
+			var img = Image.LoadFromFile(resPath);
+			if (img == null)
+				return null;
+
+			// Use Nearest to keep pixel art crisp.
+			img.Resize(size, size, Image.Interpolation.Nearest);
+			var tex = ImageTexture.CreateFromImage(img);
+			return tex;
+		}
+
+		private static ImageTexture CreateTransparent()
+		{
+			var img = new Image();
+			img.CreateEmpty(1, 1, false, Image.Format.Rgba8);
+			img.SetPixel(0, 0, new Color(0, 0, 0, 0));
+			return ImageTexture.CreateFromImage(img);
 		}
 	}
 }

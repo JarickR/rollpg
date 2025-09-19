@@ -1,94 +1,79 @@
-// Scripts/Engine/Loadout/LoadoutModels.cs
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using DiceArena.Engine.Content;
 
 namespace DiceArena.Engine.Loadout
 {
-	public enum DieFaceKind { HeroAction, Upgrade, Spell, Defense }
-
-	public enum DefenseKind
+	/// <summary>Kinds of faces you can roll on a member's d6.</summary>
+	public enum DieFaceKind
 	{
-		Disrupt,
-		Redirect,
-		Delay,
-		Counterspell,
-		DodgeRoll,
-		SmokeScreen
+		Spell,
+		Hero,
+		Upgrade,
+		Defense
 	}
 
-	public static class DefenseRules
-	{
-		public static readonly Dictionary<DefenseKind, string> Text = new()
-		{
-			{ DefenseKind.Disrupt, "Cancel the next spell that specifically targets you (not physical or AoE)." },
-			{ DefenseKind.Redirect, "Choose another player: the next spell that targets you is redirected to them (not physical/AoE)." },
-			{ DefenseKind.Delay, "The next spell that targets you is delayed; it resolves at the start of your next turn." },
-			{ DefenseKind.Counterspell, "The next spell that targets you deals half damage to you and reflects half to the caster." },
-			{ DefenseKind.DodgeRoll, "When targeted by a physical attack, roll d6: 1–3 Dodge (miss), 4–6 Fail (hit)." },
-			{ DefenseKind.SmokeScreen, "The next spell attack targeting you has a 50% chance to miss (1–3 miss, 4–6 hit)." },
-		};
-	}
-
-	// ⬇️ made properties mutable so Upgrade can change a face in-place
-	public sealed class DieFace
+	/// <summary>A single face on the d6.</summary>
+	public class DieFace
 	{
 		public DieFaceKind Kind { get; set; }
-		public string? SpellId { get; set; }           // used when Kind == Spell
-		public DefenseKind? Defense { get; set; }      // used when Kind == Defense
-
-		public override string ToString()
-		{
-			return Kind switch
-			{
-				DieFaceKind.HeroAction => "Hero Action",
-				DieFaceKind.Upgrade    => "Upgrade",
-				DieFaceKind.Spell      => $"Spell:{SpellId}",
-				DieFaceKind.Defense    => $"Defense:{Defense}",
-				_ => "?"
-			};
-		}
+		/// <summary>Used when Kind == Spell (id from ContentDatabase).</summary>
+		public string? SpellId { get; set; }
+		/// <summary>Display label / description, e.g. class hero action or defense name.</summary>
+		public string? Display { get; set; }
 	}
 
-	public sealed class MemberLoadout
+	/// <summary>Per-member spell offers rendered on the loadout card.</summary>
+	public sealed class MemberOffer
 	{
-		public string ClassId { get; set; } = "";
+		public int MemberIndex { get; set; }
+		public List<SpellDef> Tier1 { get; set; } = new();
+		public List<SpellDef> Tier2 { get; set; } = new();
+		public int Tier1PickCount { get; set; } = 2;
+		public int Tier2PickCount { get; set; } = 1;
+	}
 
-		// Offers shown to the player
-		public List<string> Tier1OfferIds { get; set; } = new(); // 3
-		public List<string> Tier2OfferIds { get; set; } = new(); // 2
+	/// <summary>All offers for the party at loadout time.</summary>
+	public sealed class PartyOffer
+	{
+		public List<MemberOffer> Members { get; } = new();
 
-		// Player selections (must be 2×T1, 1×T2)
-		public HashSet<string> ChosenTier1SpellIds { get; set; } = new();
+		public int Count => Members.Count;
+		public MemberOffer this[int index] => Members[index];
+
+		public void Clear() => Members.Clear();
+		public void Add(MemberOffer m) => Members.Add(m);
+	}
+
+	/// <summary>Final per-member selection + the built d6.</summary>
+	public class MemberSetup
+	{
+		public ClassDef Class { get; set; } = default!;
+		public List<SpellDef> Tier1 { get; set; } = new(); // exactly 2
+		public SpellDef Tier2 { get; set; } = default!;    // exactly 1
+		public List<DieFace> Dice { get; set; } = new(6);  // built d6
+
+		// ---- Back-compat fields (IDs) expected by older code ----
+		public string ClassId => Class.Id;
+
+		/// <summary>IDs of the offered Tier1 spells for this member (3 ids).</summary>
+		public List<string> Tier1OfferIds { get; set; } = new();
+
+		/// <summary>IDs of the offered Tier2 spells for this member (2 ids).</summary>
+		public List<string> Tier2OfferIds { get; set; } = new();
+
+		/// <summary>IDs of the chosen Tier1 spells (exactly 2 ids).</summary>
+		public List<string> ChosenTier1SpellIds { get; set; } = new();
+
+		/// <summary>ID of the chosen Tier2 spell (exactly 1 id).</summary>
 		public string? ChosenTier2SpellId { get; set; }
-
-		// Final d6 after sealing
-		public List<DieFace> Die { get; set; } = new(6);
 	}
 
-	public sealed class PartyLoadout
+	/// <summary>Final party configuration ready for the battle scene / loop.</summary>
+	public class PartySetup
 	{
-		public int PartySize { get; set; } = 1; // 1..4
-		public List<MemberLoadout> Members { get; set; } = new();
-	}
+		public List<MemberSetup> Members { get; set; } = new();
 
-	public static class LoadoutRules
-	{
-		public const int Tier1OfferCount = 3;
-		public const int Tier2OfferCount = 2;
-		public const int Tier1Picks = 2;
-		public const int Tier2Picks = 1;
-
-		public const int TotalFaces = 6;
-		public const int SpellFaceSlots = 4;
-
-		public static bool IsValidPartySize(int s) => s >= 1 && s <= 4;
-
-		public static bool IsValidMemberSelection(MemberLoadout m)
-			=> m.ChosenTier1SpellIds.Count == Tier1Picks && !string.IsNullOrWhiteSpace(m.ChosenTier2SpellId);
-
-		public static IEnumerable<DefenseKind> AllDefenses()
-			=> Enum.GetValues(typeof(DefenseKind)).Cast<DefenseKind>();
+		public int Count => Members.Count;
+		public MemberSetup this[int index] => Members[index];
 	}
 }

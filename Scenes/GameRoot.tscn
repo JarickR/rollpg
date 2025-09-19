@@ -19,7 +19,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1")
 LoadoutScreenPath = NodePath("LoadoutScreen")
-BattleRootPath = NodePath("BattleRoot")
 
 [node name="BattleRoot" type="Control" parent="."]
 unique_name_in_owner = true
@@ -99,8 +98,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("5_fyhyk")
-MemberCardsRootPath = NodePath("MemberCardsRoot")
-PartySizeSpinPath = NodePath("PartySizeSpin")
 
 [node name="MemberCardsRoot" type="GridContainer" parent="LoadoutScreen"]
 unique_name_in_owner = true
@@ -118,5 +115,6 @@ layout_mode = 0
 offset_right = 86.5625
 offset_bottom = 31.0
 min_value = 1.0
-max_value = 10.0
-value = 1.0
+max_value = 4.0
+value = 3.0
+update_on_text_changed = true

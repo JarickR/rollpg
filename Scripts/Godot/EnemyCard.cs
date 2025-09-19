@@ -1,4 +1,5 @@
 using Godot;
+using DiceArena.Godot;  // gives access to IconLibrary
 
 namespace DiceArena.GodotUI
 {

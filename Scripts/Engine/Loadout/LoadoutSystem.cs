@@ -1,4 +1,3 @@
-// Scripts/Engine/Loadout/LoadoutSystem.cs
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,147 +5,91 @@ using DiceArena.Engine.Content;
 
 namespace DiceArena.Engine.Loadout
 {
+	/// <summary>Centralizes numeric rules for offers & picks (used by older code paths).</summary>
+	public static class LoadoutRules
+	{
+		public const int Tier1Offers = LoadoutCore.DefaultTier1OfferCount; // 3
+		public const int Tier2Offers = LoadoutCore.DefaultTier2OfferCount; // 2
+		public const int Tier1Picks  = LoadoutCore.DefaultTier1PickCount;  // 2
+		public const int Tier2Picks  = LoadoutCore.DefaultTier2PickCount;  // 1
+	}
+
 	/// <summary>
-	/// Creates and validates a PartyLoadout using the models in LoadoutModels.cs
-	/// (PartyLoadout + MemberLoadout).
+	/// Thin compatibility layer so older call-sites can build offers and finalize a party
+	/// without directly touching the new UI classes.
 	/// </summary>
 	public static class LoadoutSystem
 	{
-		/// <summary>
-		/// Create a new party with the specified size and (optionally) assign class ids in order.
-		/// </summary>
-		public static PartyLoadout NewParty(int partySize, IReadOnlyList<string> classIds)
+		/// <summary>Generate a PartyOffer from explicit spell pools.</summary>
+		public static PartyOffer BuildOffers(int partySize, IList<SpellDef> tier1Pool, IList<SpellDef> tier2Pool, int? seed = null)
 		{
-			if (!LoadoutRules.IsValidPartySize(partySize))
-				throw new ArgumentOutOfRangeException(nameof(partySize), "Party size must be 1..4.");
+			var rng = seed.HasValue ? new Random(seed.Value) : new Random();
+			partySize = Math.Clamp(partySize, 1, 4);
 
-			var party = new PartyLoadout { PartySize = partySize };
-
+			var offer = new PartyOffer();
 			for (int i = 0; i < partySize; i++)
 			{
-				var m = new MemberLoadout();
-				if (classIds != null && i < classIds.Count)
-					m.ClassId = classIds[i] ?? string.Empty;
+				var t1 = DrawDistinct(tier1Pool, LoadoutRules.Tier1Offers, rng);
+				var t2 = DrawDistinct(tier2Pool, LoadoutRules.Tier2Offers, rng);
 
+				offer.Members.Add(new MemberOffer
+				{
+					MemberIndex    = i,
+					Tier1          = t1,
+					Tier2          = t2,
+					Tier1PickCount = LoadoutRules.Tier1Picks,
+					Tier2PickCount = LoadoutRules.Tier2Picks
+				});
+			}
+			return offer;
+		}
+
+		/// <summary>Convert a PartyOffer to a PartyLoadout shell with offer IDs pre-populated (legacy).</summary>
+		public static PartyLoadout ToPartyLoadout(PartyOffer offers)
+		{
+			var party = new PartyLoadout();
+			for (int i = 0; i < offers.Count; i++)
+			{
+				var m = new MemberLoadout
+				{
+					Tier1OfferIds = offers[i].Tier1.Select(s => s.Id).ToList(),
+					Tier2OfferIds = offers[i].Tier2.Select(s => s.Id).ToList()
+				};
 				party.Members.Add(m);
 			}
-
 			return party;
 		}
 
 		/// <summary>
-		/// Assign the rolled offers and the player's selections for a single member.
-		/// Overwrites previous values for that member.
+		/// Finalize a party using concrete selections (resolved defs), returning a PartySetup with built dice.
+		/// Accepts IList<> for older call sites and converts internally.
 		/// </summary>
-		public static void ApplyPicks(
-			PartyLoadout party,
-			int memberIndex,
-			IEnumerable<string> tier1OfferIds,
-			IEnumerable<string> tier2OfferIds,
-			IEnumerable<string> selectedTier1,
-			string? selectedTier2)
+		public static PartySetup Finalize(
+			IList<ClassDef> classes,
+			IList<IReadOnlyList<SpellDef>> chosenT1,
+			IList<SpellDef> chosenT2)
 		{
-			if (party == null) throw new ArgumentNullException(nameof(party));
-			if (memberIndex < 0 || memberIndex >= party.Members.Count)
-				throw new ArgumentOutOfRangeException(nameof(memberIndex));
+			// Convert to List<> so we can pass IReadOnlyList<> cleanly
+			var classList = classes is List<ClassDef> lc ? lc : new List<ClassDef>(classes);
+			var t1List    = chosenT1 is List<IReadOnlyList<SpellDef>> lt1 ? lt1 : new List<IReadOnlyList<SpellDef>>(chosenT1);
+			var t2List    = chosenT2 is List<SpellDef> lt2 ? lt2 : new List<SpellDef>(chosenT2);
 
-			var member = party.Members[memberIndex];
-
-			member.Tier1OfferIds = (tier1OfferIds ?? Enumerable.Empty<string>())
-				.Where(NotNullOrEmpty).Distinct().ToList();
-
-			member.Tier2OfferIds = (tier2OfferIds ?? Enumerable.Empty<string>())
-				.Where(NotNullOrEmpty).Distinct().ToList();
-
-			member.ChosenTier1SpellIds = new HashSet<string>(
-				(selectedTier1 ?? Enumerable.Empty<string>())
-					.Where(NotNullOrEmpty)
-					.Distinct()
-					.Take(LoadoutRules.Tier1Picks));
-
-			member.ChosenTier2SpellId = string.IsNullOrWhiteSpace(selectedTier2) ? null : selectedTier2;
+			return LoadoutCore.BuildPartySetup(classList, t1List, t2List);
 		}
 
-		/// <summary>
-		/// Validate a single member’s picks against the rules and their offers.
-		/// </summary>
-		public static (bool ok, string reason) ValidateMember(MemberLoadout m)
+		private static List<T> DrawDistinct<T>(IList<T> pool, int count, Random rng)
 		{
-			if (string.IsNullOrWhiteSpace(m.ClassId))
-				return (false, "Class not selected.");
+			var result = new List<T>(count);
+			if (pool.Count == 0) return result;
 
-			if (m.ChosenTier1SpellIds.Count != LoadoutRules.Tier1Picks)
-				return (false, $"Tier 1 selections must be exactly {LoadoutRules.Tier1Picks}.");
-
-			if (m.ChosenTier2SpellId == null)
-				return (false, $"Tier 2 selection must be exactly {LoadoutRules.Tier2Picks}.");
-
-			// Containment checks
-			if (!m.ChosenTier1SpellIds.All(id => m.Tier1OfferIds.Contains(id)))
-				return (false, "One or more Tier 1 selections are not in the offered list.");
-
-			if (!m.Tier2OfferIds.Contains(m.ChosenTier2SpellId))
-				return (false, "Tier 2 selection is not in the offered list.");
-
-			return (true, "");
-		}
-
-		/// <summary>
-		/// Validate the entire party. Returns index of first invalid member if any.
-		/// </summary>
-		public static (bool ok, int badIndex, string reason) ValidateParty(PartyLoadout party)
-		{
-			if (party == null) return (false, -1, "Party is null.");
-			for (int i = 0; i < party.Members.Count; i++)
+			var idx = Enumerable.Range(0, pool.Count).ToList();
+			for (int pick = 0; pick < count && idx.Count > 0; pick++)
 			{
-				var (ok, reason) = ValidateMember(party.Members[i]);
-				if (!ok) return (false, i, reason);
+				int j = rng.Next(0, idx.Count);
+				result.Add(pool[idx[j]]);
+				idx.RemoveAt(j);
 			}
-			return (true, -1, "");
-		}
-
-		private static bool NotNullOrEmpty(string s) => !string.IsNullOrEmpty(s);
-
-		/// <summary>
-		/// Convenience: return a readable string describing a party's picks (for logs/debug UI).
-		/// </summary>
-		public static string Describe(PartyLoadout party, ContentBundle? bundle = null)
-		{
-			var lines = new List<string>();
-			for (int i = 0; i < party.Members.Count; i++)
-			{
-				var m = party.Members[i];
-				string className = m.ClassId;
-
-				if (bundle != null)
-				{
-					var cls = bundle.Classes.FirstOrDefault(c => c.Id == m.ClassId);
-					if (cls != null) className = cls.Name;
-				}
-
-				lines.Add($"Member {i + 1}: Class = {className}");
-				lines.Add($"  T1 Offers : [{string.Join(", ", ResolveNames(m.Tier1OfferIds, bundle))}]");
-				lines.Add($"  T2 Offers : [{string.Join(", ", ResolveNames(m.Tier2OfferIds, bundle))}]");
-				lines.Add($"  Picked T1 : [{string.Join(", ", ResolveNames(m.ChosenTier1SpellIds, bundle))}]");
-				lines.Add($"  Picked T2 : {ResolveName(m.ChosenTier2SpellId ?? "", bundle)}");
-			}
-			return string.Join(Environment.NewLine, lines);
-		}
-
-		private static IEnumerable<string> ResolveNames(IEnumerable<string> ids, ContentBundle? bundle)
-		{
-			foreach (var id in ids)
-				yield return ResolveName(id, bundle);
-		}
-
-		private static string ResolveName(string id, ContentBundle? bundle)
-		{
-			if (bundle == null || string.IsNullOrEmpty(id)) return id ?? "";
-			var sp = bundle.Spells.FirstOrDefault(s => s.Id == id);
-			if (sp != null) return sp.Name;
-			var cls = bundle.Classes.FirstOrDefault(c => c.Id == id);
-			if (cls != null) return cls.Name;
-			return id;
+			return result;
 		}
 	}
 }

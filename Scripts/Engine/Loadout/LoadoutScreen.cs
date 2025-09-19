@@ -1,240 +1,208 @@
-// Scripts/Godot/LoadoutScreen.cs
-using Godot;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using DiceArena.Engine.Content;
-using DiceArena.Engine.Loadout; // Log + LoadoutMemberCard
+using Godot;
+using DiceArena.Godot;
 
-namespace DiceArena.GodotUI
+namespace DiceArena.Engine.Loadout
 {
-	/// <summary>
-	/// Root Loadout screen node.
-	/// Public API:
-	///   - SetBundle(typeof(ContentDatabase)) or SetBundle(dbInstance)
-	///   - InjectContent(classes, t1, t2)
-	///   - Build() / BuildCards()
-	/// Emits SelectionChanged(int memberIndex, string? classId, string[] tier1Ids, string? tier2Id)
-	/// when any card changes selection.
-	/// </summary>
-	public partial class LoadoutScreen : Control
+	public partial class LoadoutScreen : Node
 	{
-		[Export] public NodePath? MemberCardsRootPath { get; set; }
-		[Export] public NodePath? PartySizeSpinPath { get; set; }
+		[Export] public NodePath HostRootPath { get; set; } = new NodePath("MemberCardsRoot");
+		[Export] public NodePath PartySizeSpinPath { get; set; } = new NodePath("PartySizeSpin");
 
-		[Export(PropertyHint.Range, "1,8,1")]
-		public int DefaultPartySize { get; set; } = 3;
+		private Control _root = default!;
+		private SpinBox _partySpin = default!;
 
-		[Export] public bool AutoBuild { get; set; } = false;
+		public record UiMemberSelection(
+			int? SelectedClassId,
+			List<int> Tier1ChosenIds,
+			int? Tier2ChosenId);
 
-		// Internal content slices
-		private List<ClassDef> _classes = new();
-		private List<SpellDef> _tier1 = new();
-		private List<SpellDef> _tier2 = new();
-		private bool _hasContent = false;
-		private bool _needsBuild = false; // set when a build is requested before content arrives
+		private readonly List<UiMember> _members = new();
+
+		private class UiMember
+		{
+			public Control Root = default!;
+			public GridContainer ClassGrid = default!;
+			public HFlowContainer T1Row = default!;
+			public HFlowContainer T2Row = default!;
+
+			public int? SelectedClassId;
+			public readonly List<int> T1 = new();
+			public int? T2;
+		}
 
 		public override void _Ready()
 		{
-			EnsureSpinDefaults();
-			WirePartySizeSpin();
-
-			if (AutoBuild && _hasContent)
-				SafeBuild();
-			else if (AutoBuild && !_hasContent)
-				_needsBuild = true;
+			_root = GetNodeOrNull<Control>(HostRootPath) ?? throw new Exception($"[Loadout] HostRoot '{HostRootPath}' not found");
+			_partySpin = GetNodeOrNull<SpinBox>(PartySizeSpinPath) ?? throw new Exception($"[Loadout] PartySpin '{PartySizeSpinPath}' not found");
 		}
 
-		// -------- Public API (instance methods) --------
-
-		/// <summary>
-		/// Accepts an instance or a Type for a static class exposing:
-		///   IEnumerable<ClassDef> GetAllClasses()
-		///   IEnumerable<SpellDef> GetSpellsByTier(int)
-		/// </summary>
-		public void SetBundle(object db)
+		// External entry from Game.cs:
+		public void Build(IReadOnlyList<string> classNames, IReadOnlyList<string> tier1Names, IReadOnlyList<string> tier2Names)
 		{
-			if (db == null) { Log.E("SetBundle: null db"); return; }
+			_root.QueueFreeChildren();
+			_members.Clear();
 
-			try
-			{
-				Type t; object? target = null;
-				if (db is Type dt) t = dt; else { t = db.GetType(); target = db; }
-
-				var getAllClasses   = t.GetMethod("GetAllClasses",   BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, Type.EmptyTypes);
-				var getSpellsByTier = t.GetMethod("GetSpellsByTier", BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static, new Type[] { typeof(int) });
-
-				if (getAllClasses == null || getSpellsByTier == null)
-				{
-					Log.E("SetBundle: DB missing GetAllClasses() / GetSpellsByTier(int).");
-					return;
-				}
-
-				var classes = (getAllClasses.Invoke(target, null) as IEnumerable<ClassDef>) ?? Enumerable.Empty<ClassDef>();
-				var t1 = (getSpellsByTier.Invoke(target, new object[] { 1 }) as IEnumerable<SpellDef>) ?? Enumerable.Empty<SpellDef>();
-				var t2 = (getSpellsByTier.Invoke(target, new object[] { 2 }) as IEnumerable<SpellDef>) ?? Enumerable.Empty<SpellDef>();
-
-				InjectContent(classes, t1, t2);
-				Log.I($"SetBundle: injected classes={_classes.Count}, t1={_tier1.Count}, t2={_tier2.Count}");
-			}
-			catch (Exception ex) { Log.E($"SetBundle reflection failed: {ex.Message}"); }
-		}
-
-		/// <summary>Explicit injection of slices you already loaded from JSON.</summary>
-		public void InjectContent(IEnumerable<ClassDef> classes, IEnumerable<SpellDef> tier1, IEnumerable<SpellDef> tier2)
-		{
-			_classes = classes?.ToList() ?? new();
-			_tier1 = tier1?.ToList() ?? new();
-			_tier2 = tier2?.ToList() ?? new();
-			_hasContent = true;
-
-			// Ensure the spin reflects the intended default (prevents "1 card" surprise)
-			var spin = GetNodeSafe<SpinBox>(PartySizeSpinPath);
-			if (GodotObject.IsInstanceValid(spin) && spin.Value < DefaultPartySize)
-				spin.Value = DefaultPartySize;
-
-			Log.I($"InjectContent: classes={_classes.Count}, t1={_tier1.Count}, t2={_tier2.Count}");
-
-			if (_needsBuild || AutoBuild)
-			{
-				_needsBuild = false;
-				SafeBuild();
-			}
-		}
-
-		/// <summary>Builds/rebuilds the member cards based on current slices and spin value.</summary>
-		public void BuildCards()
-		{
-			if (!_hasContent)
-			{
-				_needsBuild = true;
-				return;
-			}
-
-			var memberRoot = GetNodeSafe<Container>(MemberCardsRootPath);
-			var partySpin  = GetNodeSafe<SpinBox>(PartySizeSpinPath);
-
-			if (!GodotObject.IsInstanceValid(memberRoot))
-			{
-				Log.E("BuildCards: MemberCardsRootPath invalid / unset.");
-				return;
-			}
-
-			int partySize = DefaultPartySize;
-			if (GodotObject.IsInstanceValid(partySpin))
-			{
-				if (partySpin.Value < DefaultPartySize) partySpin.Value = DefaultPartySize;
-				partySize = Mathf.Max(1, (int)partySpin.Value);
-			}
-
-			// If the root is a GridContainer, show all cards in one row:
-			if (memberRoot is GridContainer g)
-			{
-				g.Columns = Mathf.Max(1, partySize);
-				g.AddThemeConstantOverride("h_separation", 16);
-				g.AddThemeConstantOverride("v_separation", 16);
-			}
-
-			// Root layout guards
-			memberRoot.SetDeferred("custom_minimum_size", new Vector2(1280, 520));
-
-			// Clear old
-			for (int i = memberRoot.GetChildCount() - 1; i >= 0; i--)
-			{
-				var c = memberRoot.GetChild(i);
-				if (GodotObject.IsInstanceValid(c)) memberRoot.RemoveChild(c);
-				c.QueueFree();
-			}
-
-			// Build cards + wire signals
+			int partySize = (int)_partySpin.Value;
 			for (int i = 0; i < partySize; i++)
 			{
-				var card = new DiceArena.Engine.Loadout.LoadoutMemberCard();
-				if (card is Control cc)
-				{
-					cc.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-					cc.SizeFlagsVertical   = Control.SizeFlags.ShrinkCenter;
-				}
+				_members.Add(MakeMemberCard($"Member {i + 1}", classNames, tier1Names, tier2Names));
+			}
+		}
 
-				memberRoot.AddChild(card);
-				card.Build(i, _classes, _tier1, _tier2);
+		public List<UiMemberSelection> GetSelections()
+		{
+			var result = new List<UiMemberSelection>(_members.Count);
+			foreach (var m in _members)
+				result.Add(new UiMemberSelection(m.SelectedClassId, new List<int>(m.T1), m.T2));
+			return result;
+		}
 
-				// Bubble card selections up to the screen level
-				card.SelectionChanged += (int memberIndex, string? classId, string[] t1Ids, string? t2Id) =>
+		// ---------- UI builders ----------
+
+		private UiMember MakeMemberCard(string title, IReadOnlyList<string> classNames, IReadOnlyList<string> t1, IReadOnlyList<string> t2)
+		{
+			var panel = new PanelContainer
+			{
+				CustomMinimumSize = new Vector2(360, 220)
+			};
+			panel.AddThemeConstantOverride("margin_left", 8);
+			panel.AddThemeConstantOverride("margin_right", 8);
+			panel.AddThemeConstantOverride("margin_top", 6);
+			panel.AddThemeConstantOverride("margin_bottom", 6);
+			_root.AddChild(panel);
+
+			var vb = new VBoxContainer();
+			panel.AddChild(vb);
+
+			vb.AddChild(new Label { Text = title });
+
+			// Class grid 5x2
+			vb.AddChild(new Label { Text = "Class" });
+			var classGrid = new GridContainer { Columns = 5 };
+			classGrid.AddThemeConstantOverride("v_separation", 4);
+			classGrid.AddThemeConstantOverride("h_separation", 4);
+			vb.AddChild(classGrid);
+
+			// 3x T1 (pick 2)
+			vb.AddChild(new Label { Text = "Tier 1 Spells (pick 2)" });
+			var t1Row = new HFlowContainer();
+			t1Row.AddThemeConstantOverride("h_separation", 4);
+			vb.AddChild(t1Row);
+
+			// 2x T2 (pick 1)
+			vb.AddChild(new Label { Text = "Tier 2 Spells (pick 1)" });
+			var t2Row = new HFlowContainer();
+			t2Row.AddThemeConstantOverride("h_separation", 4);
+			vb.AddChild(t2Row);
+
+			var ui = new UiMember
+			{
+				Root = panel,
+				ClassGrid = classGrid,
+				T1Row = t1Row,
+				T2Row = t2Row
+			};
+
+			// Populate classes
+			for (int i = 0; i < Math.Min(10, classNames.Count); i++)
+			{
+				int id = i; // stable capture
+				var name = classNames[i];
+				var tile = new IconTile();
+				tile.SetTexture(IconLibrary.GetClassTexture(name));
+				tile.SetTooltip(name);
+				tile.Toggled += pressed =>
 				{
-					EmitSignal(SignalName.SelectionChanged, memberIndex, classId, t1Ids, t2Id);
+					if (!pressed)
+					{
+						if (ui.SelectedClassId == id) ui.SelectedClassId = null;
+						return;
+					}
+					// turn others off
+					foreach (var c in ui.ClassGrid.GetChildren())
+						if (c is IconTile other && other != tile) other.ButtonPressed = false;
+					ui.SelectedClassId = id;
 				};
+				classGrid.AddChild(tile);
 			}
 
-			memberRoot.SetDeferred("custom_minimum_size", new Vector2(1280, 520));
-			memberRoot.QueueRedraw();
-
-			var cols = (memberRoot as GridContainer)?.Columns ?? -1;
-			Log.V($"BuildCards complete: partySize={partySize}, rootChildren={memberRoot.GetChildCount()}, rootType={memberRoot.GetType().Name}, gridCols={cols}");
-
-			if (memberRoot.GetChildCount() == 0 && (_classes.Count == 0 && _tier1.Count == 0 && _tier2.Count == 0))
-				InsertEmergencyLabel("⚠ No content available");
-		}
-
-		// Convenience
-		public void Build() => BuildCards();
-
-		// -------- Internals --------
-
-		private void EnsureSpinDefaults()
-		{
-			var spin = GetNodeSafe<SpinBox>(PartySizeSpinPath);
-			if (!GodotObject.IsInstanceValid(spin)) return;
-
-			// Ensure sane config
-			if (spin.MinValue < 1) spin.MinValue = 1;
-			if (spin.MaxValue < 1) spin.MaxValue = 8;
-			if (spin.Step <= 0)    spin.Step     = 1;
-
-			if (spin.Value < 1)
-				spin.Value = DefaultPartySize;
-		}
-
-		private void WirePartySizeSpin()
-		{
-			var spin = GetNodeSafe<SpinBox>(PartySizeSpinPath);
-			if (!GodotObject.IsInstanceValid(spin)) return;
-			spin.ValueChanged += (double _) =>
+			// Populate tier1 (3 buttons)
+			var t1Ids = PickRandomIndices(t1, 3);
+			foreach (var idx in t1Ids)
 			{
-				if (!_hasContent) { _needsBuild = true; return; }
-				SafeBuild();
-			};
-		}
+				int id = idx;
+				var name = t1[id];
+				var tile = new IconTile();
+				tile.SetTexture(IconLibrary.GetSpellTexture(name, 1));
+				tile.SetTooltip(name);
+				tile.Toggled += pressed =>
+				{
+					if (pressed)
+					{
+						if (ui.T1.Count < 2 && !ui.T1.Contains(id))
+							ui.T1.Add(id);
+						else
+							tile.ButtonPressed = false; // deny a 3rd pick
+					}
+					else
+					{
+						ui.T1.Remove(id);
+					}
+				};
+				t1Row.AddChild(tile);
+			}
 
-		private void SafeBuild()
-		{
-			try { BuildCards(); }
-			catch (Exception ex) { Log.W($"BuildCards exception: {ex.Message}"); }
-		}
-
-		private void InsertEmergencyLabel(string text)
-		{
-			var memberRoot = GetNodeSafe<Container>(MemberCardsRootPath);
-			if (!GodotObject.IsInstanceValid(memberRoot)) return;
-
-			var label = new Label
+			// Populate tier2 (2 buttons)
+			var t2Ids = PickRandomIndices(t2, 2);
+			foreach (var idx in t2Ids)
 			{
-				Text = text,
-				HorizontalAlignment = HorizontalAlignment.Center,
-				VerticalAlignment = VerticalAlignment.Center,
-				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-				SizeFlagsVertical = Control.SizeFlags.ExpandFill
-			};
-			memberRoot.AddChild(label);
-			label.SetDeferred("custom_minimum_size", new Vector2(640, 180));
-			memberRoot.QueueRedraw();
+				int id = idx;
+				var name = t2[id];
+				var tile = new IconTile();
+				tile.SetTexture(IconLibrary.GetSpellTexture(name, 2));
+				tile.SetTooltip(name);
+				tile.Toggled += pressed =>
+				{
+					if (!pressed)
+					{
+						if (ui.T2 == id) ui.T2 = null;
+						return;
+					}
+					// ensure single selection
+					foreach (var c in ui.T2Row.GetChildren())
+						if (c is IconTile other && other != tile) other.ButtonPressed = false;
+					ui.T2 = id;
+				};
+				t2Row.AddChild(tile);
+			}
+
+			return ui;
 		}
 
-		private T? GetNodeSafe<T>(NodePath? path) where T : class
+		// Utility: return N distinct indices from 0..(count-1)
+		private static List<int> PickRandomIndices(IReadOnlyList<string> source, int count)
 		{
-			if (path == null || path.IsEmpty) return null;
-			return base.GetNodeOrNull(path) as T;
+			var list = new List<int>(source.Count);
+			for (int i = 0; i < source.Count; i++) list.Add(i);
+
+			var rng = new Random();
+			for (int i = list.Count - 1; i > 0; i--)
+			{
+				int j = rng.Next(i + 1);
+				(list[i], list[j]) = (list[j], list[i]);
+			}
+			if (count < list.Count) list.RemoveRange(count, list.Count - count);
+			return list;
+		}
+	}
+
+	internal static class NodeUtil
+	{
+		public static void QueueFreeChildren(this Node n)
+		{
+			foreach (var c in n.GetChildren()) (c as Node)?.QueueFree();
 		}
 	}
 }

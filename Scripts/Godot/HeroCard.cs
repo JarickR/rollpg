@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Godot;
 using DiceArena.Engine.Content; // ClassDef, ContentBundle
+using DiceArena.Godot; // <-- add this line
+
 
 public partial class HeroCard : Control
 {
