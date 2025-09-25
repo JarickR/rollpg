@@ -1,208 +1,192 @@
+// Scripts/Engine/Loadout/LoadoutScreen.cs
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
-using DiceArena.Godot;
+using DiceArena.Data;
+using Compat = DiceArena.Data.ContentDatabaseCompat;
+
+// Aliases to avoid ambiguity with DiceArena.Data.*
+using ClassDef = DiceArena.Engine.Content.ClassDef;
+using SpellDef = DiceArena.Engine.Content.SpellDef;
 
 namespace DiceArena.Engine.Loadout
 {
-	public partial class LoadoutScreen : Node
+	public partial class LoadoutScreen : Control
 	{
-		[Export] public NodePath HostRootPath { get; set; } = new NodePath("MemberCardsRoot");
-		[Export] public NodePath PartySizeSpinPath { get; set; } = new NodePath("PartySizeSpin");
+		[Export] public NodePath MemberCardsRootPath { get; set; } = new NodePath();
+		[Export] public NodePath PartySizeSpinPath   { get; set; } = new NodePath();
 
-		private Control _root = default!;
-		private SpinBox _partySpin = default!;
+		// Live nodes
+		private Control? _cardsRoot;
+		private SpinBox? _partySpin;
 
-		public record UiMemberSelection(
-			int? SelectedClassId,
-			List<int> Tier1ChosenIds,
-			int? Tier2ChosenId);
+		// Data
+		private ContentBundle? _bundle;
 
-		private readonly List<UiMember> _members = new();
+		// Current selection (member 0 for now)
+		private string? _classId;
+		private readonly List<string> _tier1Picked = new();
+		private string? _tier2Id;
 
-		private class UiMember
-		{
-			public Control Root = default!;
-			public GridContainer ClassGrid = default!;
-			public HFlowContainer T1Row = default!;
-			public HFlowContainer T2Row = default!;
-
-			public int? SelectedClassId;
-			public readonly List<int> T1 = new();
-			public int? T2;
-		}
+		// --------- Signals (kept here to avoid partial duplication) ---------
+		[Signal] public delegate void SelectionChangedEventHandler(int memberIndex, string? classId, string[] tier1Ids, string? tier2Id);
+		[Signal] public delegate void FinalizedEventHandler(int partySize, string[] playersJson);
 
 		public override void _Ready()
 		{
-			_root = GetNodeOrNull<Control>(HostRootPath) ?? throw new Exception($"[Loadout] HostRoot '{HostRootPath}' not found");
-			_partySpin = GetNodeOrNull<SpinBox>(PartySizeSpinPath) ?? throw new Exception($"[Loadout] PartySpin '{PartySizeSpinPath}' not found");
-		}
+			_cardsRoot = GetNodeOrNull<Control>(MemberCardsRootPath);
+			_partySpin = GetNodeOrNull<SpinBox>(PartySizeSpinPath);
 
-		// External entry from Game.cs:
-		public void Build(IReadOnlyList<string> classNames, IReadOnlyList<string> tier1Names, IReadOnlyList<string> tier2Names)
-		{
-			_root.QueueFreeChildren();
-			_members.Clear();
+			// Load content (shim we add in ContentDatabaseCompat)
+			_bundle = Compat.LoadOrCreate();
 
-			int partySize = (int)_partySpin.Value;
-			for (int i = 0; i < partySize; i++)
+			BuildForPartySize(GetPartySize());
+
+			if (_partySpin != null)
 			{
-				_members.Add(MakeMemberCard($"Member {i + 1}", classNames, tier1Names, tier2Names));
+				_partySpin.MinValue = 1;
+				_partySpin.MaxValue = 4;
+				_partySpin.ValueChanged += OnPartySizeChanged;
 			}
 		}
 
-		public List<UiMemberSelection> GetSelections()
+		private int GetPartySize() => (int)(_partySpin?.Value ?? 1);
+
+		private void OnPartySizeChanged(double value) => BuildForPartySize((int)value);
+
+		private static void ClearChildren(Node parent)
 		{
-			var result = new List<UiMemberSelection>(_members.Count);
-			foreach (var m in _members)
-				result.Add(new UiMemberSelection(m.SelectedClassId, new List<int>(m.T1), m.T2));
-			return result;
+			foreach (var c in parent.GetChildren())
+				if (c is Node n) n.QueueFree();
 		}
 
-		// ---------- UI builders ----------
-
-		private UiMember MakeMemberCard(string title, IReadOnlyList<string> classNames, IReadOnlyList<string> t1, IReadOnlyList<string> t2)
+		private void BuildForPartySize(int partySize)
 		{
-			var panel = new PanelContainer
+			if (_cardsRoot == null) return;
+			ClearChildren(_cardsRoot);
+
+			// Member 0 card for now
+			var card = BuildMemberCard(0);
+			_cardsRoot.AddChild(card);
+
+			// Finalize
+			var finalize = new Button { Text = "Finalize" };
+			finalize.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+			finalize.Pressed += OnFinalizePressed;
+			_cardsRoot.AddChild(finalize);
+		}
+
+		private Control BuildMemberCard(int memberIndex)
+		{
+			var root = new VBoxContainer
 			{
-				CustomMinimumSize = new Vector2(360, 220)
-			};
-			panel.AddThemeConstantOverride("margin_left", 8);
-			panel.AddThemeConstantOverride("margin_right", 8);
-			panel.AddThemeConstantOverride("margin_top", 6);
-			panel.AddThemeConstantOverride("margin_bottom", 6);
-			_root.AddChild(panel);
-
-			var vb = new VBoxContainer();
-			panel.AddChild(vb);
-
-			vb.AddChild(new Label { Text = title });
-
-			// Class grid 5x2
-			vb.AddChild(new Label { Text = "Class" });
-			var classGrid = new GridContainer { Columns = 5 };
-			classGrid.AddThemeConstantOverride("v_separation", 4);
-			classGrid.AddThemeConstantOverride("h_separation", 4);
-			vb.AddChild(classGrid);
-
-			// 3x T1 (pick 2)
-			vb.AddChild(new Label { Text = "Tier 1 Spells (pick 2)" });
-			var t1Row = new HFlowContainer();
-			t1Row.AddThemeConstantOverride("h_separation", 4);
-			vb.AddChild(t1Row);
-
-			// 2x T2 (pick 1)
-			vb.AddChild(new Label { Text = "Tier 2 Spells (pick 1)" });
-			var t2Row = new HFlowContainer();
-			t2Row.AddThemeConstantOverride("h_separation", 4);
-			vb.AddChild(t2Row);
-
-			var ui = new UiMember
-			{
-				Root = panel,
-				ClassGrid = classGrid,
-				T1Row = t1Row,
-				T2Row = t2Row
+				SizeFlagsHorizontal = SizeFlags.ExpandFill
 			};
 
-			// Populate classes
-			for (int i = 0; i < Math.Min(10, classNames.Count); i++)
+			// --- Class ---
+			root.AddChild(new Label { Text = "Class (pick 1)" });
+
+			var classOb = new OptionButton();
+			if (_bundle != null)
 			{
-				int id = i; // stable capture
-				var name = classNames[i];
-				var tile = new IconTile();
-				tile.SetTexture(IconLibrary.GetClassTexture(name));
-				tile.SetTooltip(name);
-				tile.Toggled += pressed =>
+				var classes = ContentDatabaseCompat.GetClasses(_bundle);
+				for (int i = 0; i < classes.Count; i++)
+					classOb.AddItem(classes[i].Name, i);
+
+				if (classes.Count > 0)
 				{
-					if (!pressed)
-					{
-						if (ui.SelectedClassId == id) ui.SelectedClassId = null;
-						return;
-					}
-					// turn others off
-					foreach (var c in ui.ClassGrid.GetChildren())
-						if (c is IconTile other && other != tile) other.ButtonPressed = false;
-					ui.SelectedClassId = id;
-				};
-				classGrid.AddChild(tile);
+					classOb.Select(0);
+					_classId = classes[0].Id;
+				}
 			}
-
-			// Populate tier1 (3 buttons)
-			var t1Ids = PickRandomIndices(t1, 3);
-			foreach (var idx in t1Ids)
+			classOb.ItemSelected += idx =>
 			{
-				int id = idx;
-				var name = t1[id];
-				var tile = new IconTile();
-				tile.SetTexture(IconLibrary.GetSpellTexture(name, 1));
-				tile.SetTooltip(name);
-				tile.Toggled += pressed =>
+				if (_bundle == null) return;
+				var classes = ContentDatabaseCompat.GetClasses(_bundle);
+				if (idx >= 0 && idx < (uint)classes.Count)
+					_classId = classes[(int)idx].Id;
+
+				// Coalesce to avoid nullable warnings when emitting Variant-backed signals
+				EmitSignal(SignalName.SelectionChanged, memberIndex, _classId ?? string.Empty, _tier1Picked.ToArray(), _tier2Id ?? string.Empty);
+			};
+			root.AddChild(classOb);
+
+			// --- Tier 1 ---
+			root.AddChild(new Label { Text = "Tier 1 (pick 2 of 3)" });
+			var t1Row = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			if (_bundle != null)
+			{
+				_tier1Picked.Clear();
+				var t1 = ContentDatabaseCompat.GetTier1Spells(_bundle).Take(3).ToList();
+				foreach (var s in t1)
 				{
-					if (pressed)
+					var cb = new CheckButton { Text = s.Name };
+					cb.Toggled += toggled =>
 					{
-						if (ui.T1.Count < 2 && !ui.T1.Contains(id))
-							ui.T1.Add(id);
+						if (toggled)
+						{
+							if (_tier1Picked.Count < 2) _tier1Picked.Add(s.Id);
+							else cb.ButtonPressed = false;
+						}
 						else
-							tile.ButtonPressed = false; // deny a 3rd pick
-					}
-					else
-					{
-						ui.T1.Remove(id);
-					}
-				};
-				t1Row.AddChild(tile);
-			}
+						{
+							_tier1Picked.Remove(s.Id);
+						}
 
-			// Populate tier2 (2 buttons)
-			var t2Ids = PickRandomIndices(t2, 2);
-			foreach (var idx in t2Ids)
+						EmitSignal(SignalName.SelectionChanged, memberIndex, _classId ?? string.Empty, _tier1Picked.ToArray(), _tier2Id ?? string.Empty);
+					};
+					t1Row.AddChild(cb);
+				}
+			}
+			root.AddChild(t1Row);
+
+			// --- Tier 2 ---
+			root.AddChild(new Label { Text = "Tier 2 (pick 1 of 2)" });
+			var t2Ob = new OptionButton();
+			if (_bundle != null)
 			{
-				int id = idx;
-				var name = t2[id];
-				var tile = new IconTile();
-				tile.SetTexture(IconLibrary.GetSpellTexture(name, 2));
-				tile.SetTooltip(name);
-				tile.Toggled += pressed =>
+				var t2 = ContentDatabaseCompat.GetTier2Spells(_bundle).Take(2).ToList();
+				for (int i = 0; i < t2.Count; i++)
+					t2Ob.AddItem(t2[i].Name, i);
+
+				if (t2.Count > 0)
 				{
-					if (!pressed)
-					{
-						if (ui.T2 == id) ui.T2 = null;
-						return;
-					}
-					// ensure single selection
-					foreach (var c in ui.T2Row.GetChildren())
-						if (c is IconTile other && other != tile) other.ButtonPressed = false;
-					ui.T2 = id;
-				};
-				t2Row.AddChild(tile);
+					t2Ob.Select(0);
+					_tier2Id = t2[0].Id;
+				}
 			}
-
-			return ui;
-		}
-
-		// Utility: return N distinct indices from 0..(count-1)
-		private static List<int> PickRandomIndices(IReadOnlyList<string> source, int count)
-		{
-			var list = new List<int>(source.Count);
-			for (int i = 0; i < source.Count; i++) list.Add(i);
-
-			var rng = new Random();
-			for (int i = list.Count - 1; i > 0; i--)
+			t2Ob.ItemSelected += idx =>
 			{
-				int j = rng.Next(i + 1);
-				(list[i], list[j]) = (list[j], list[i]);
-			}
-			if (count < list.Count) list.RemoveRange(count, list.Count - count);
-			return list;
-		}
-	}
+				if (_bundle == null) return;
+				var t2 = ContentDatabaseCompat.GetTier2Spells(_bundle).Take(2).ToList();
+				if (idx >= 0 && idx < (uint)t2.Count)
+					_tier2Id = t2[(int)idx].Id;
 
-	internal static class NodeUtil
-	{
-		public static void QueueFreeChildren(this Node n)
+				EmitSignal(SignalName.SelectionChanged, memberIndex, _classId ?? string.Empty, _tier1Picked.ToArray(), _tier2Id ?? string.Empty);
+			};
+			root.AddChild(t2Ob);
+
+			return root;
+		}
+
+		private void OnFinalizePressed()
 		{
-			foreach (var c in n.GetChildren()) (c as Node)?.QueueFree();
+			var partySize = GetPartySize();
+
+			// Single member payload (extend to N later)
+			var member = new
+			{
+				ClassId = _classId,
+				Tier1   = _tier1Picked.ToArray(),
+				Tier2   = _tier2Id
+			};
+
+			var json = System.Text.Json.JsonSerializer.Serialize(member);
+			var players = new[] { json };
+
+			EmitSignal(SignalName.Finalized, partySize, players);
+			GD.Print($"[Loadout] Finalized party={partySize}, players={players.Length}");
 		}
 	}
 }

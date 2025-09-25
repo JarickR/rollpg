@@ -3,19 +3,14 @@ using Godot;
 namespace DiceArena.Godot
 {
 	/// <summary>
-	/// Clears the icon cache once when this node enters the scene.
-	/// Safe to add anywhere in your boot scene; it frees itself after running.
+	/// Clears the icon cache once when the scene boots, then removes itself.
+	/// Drop this anywhere in the scene tree.
 	/// </summary>
-	[GlobalClass]
 	public partial class IconFlushOnBoot : Node
 	{
-		[Export] public bool ClearOnReady { get; set; } = true;
-
 		public override void _Ready()
 		{
-			if (ClearOnReady)
-				IconLibrary.Clear();
-
+			IconLibrary.ClearCache();
 			QueueFree();
 		}
 	}

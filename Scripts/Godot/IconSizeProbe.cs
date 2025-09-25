@@ -1,48 +1,106 @@
 using Godot;
-using System;
+using GodotEngine = global::Godot.Engine;
 
 namespace DiceArena.Godot
 {
 	/// <summary>
-	/// Simple debug helper that prints out the resolved sizes of class/spell textures
-	/// using IconLibrary. Safe to leave in project; does nothing unless in a scene.
+	/// Editor-only helper that keeps preview TextureRects small.
+	/// Deletes itself at runtime.
 	/// </summary>
-	[GlobalClass]
-	public partial class IconSizeProbe : Node
+	[Tool]
+	public partial class IconSizeProbe : Control
 	{
-		// Spell to probe
-		[Export] public string SpellName { get; set; } = "attack";
-		[Export(PropertyHint.Range, "1,3,1")] public int SpellTier { get; set; } = 1;
+		[Export] public int PreviewSize { get; set; } = 96;
+		[Export] public string ClassPreviewName { get; set; } = "ClassPreview";
+		[Export] public string SpellPreviewName { get; set; } = "SpellPreview";
 
-		// Class to probe
-		[Export] public string ClassId { get; set; } = "warrior";
-
-		// Icon size to request from IconLibrary
-		[Export(PropertyHint.Range, "16,256,1")] public int Size { get; set; } = 24;
+		private TextureRect? _classPrev;
+		private TextureRect? _spellPrev;
 
 		public override void _Ready()
 		{
-			// Probe a spell icon
-			Texture2D? spell = IconLibrary.GetSpellTexture(SpellName, SpellTier, Size);
-			if (spell != null)
+			// Use the alias to force the real Godot Engine singleton
+			if (!GodotEngine.IsEditorHint())
 			{
-				GD.Print($"[IconSizeProbe] Spell '{SpellName}' t{SpellTier} @ {Size}px -> {spell.GetWidth()}x{spell.GetHeight()}");
-			}
-			else
-			{
-				GD.PrintErr($"[IconSizeProbe] Spell '{SpellName}' t{SpellTier} @ {Size}px not found.");
+				QueueFree();
+				return;
 			}
 
-			// Probe a class icon
-			Texture2D? cls = IconLibrary.GetClassTexture(ClassId, Size);
-			if (cls != null)
+			Name = "IconSizeProbe (editor-only)";
+
+			_classPrev = GetNodeOrNull<TextureRect>(ClassPreviewName)
+						 ?? FindChild(ClassPreviewName) as TextureRect;
+			_spellPrev = GetNodeOrNull<TextureRect>(SpellPreviewName)
+						 ?? FindChild(SpellPreviewName) as TextureRect;
+
+			if (_classPrev == null)
 			{
-				GD.Print($"[IconSizeProbe] Class '{ClassId}' @ {Size}px -> {cls.GetWidth()}x{cls.GetHeight()}");
+				_classPrev = MakePreviewRect(ClassPreviewName);
+				AddChild(_classPrev);
 			}
-			else
+
+			if (_spellPrev == null)
 			{
-				GD.PrintErr($"[IconSizeProbe] Class '{ClassId}' @ {Size}px not found.");
+				_spellPrev = MakePreviewRect(SpellPreviewName);
+				AddChild(_spellPrev);
 			}
+
+			ApplyPreviewSize();
+		}
+
+		public override void _Process(double delta)
+		{
+			if (!GodotEngine.IsEditorHint())
+				return;
+
+			ApplyPreviewSize();
+		}
+
+		private TextureRect MakePreviewRect(string name)
+		{
+			var r = new TextureRect
+			{
+				Name = name,
+				StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
+				// In Godot 4 there's no SizeFlags.None — set to 0 for “no flags”
+				SizeFlagsHorizontal = 0,
+				SizeFlagsVertical   = 0,
+				MouseFilter = MouseFilterEnum.Ignore
+			};
+
+			var v = new Vector2(PreviewSize, PreviewSize);
+			r.CustomMinimumSize = v;
+			r.Size = v;
+			r.Position = Vector2.Zero;
+
+			return r;
+		}
+
+		private void ApplyPreviewSize()
+		{
+			var v = new Vector2(PreviewSize, PreviewSize);
+
+			if (_classPrev != null)
+			{
+				_classPrev.CustomMinimumSize = v;
+				_classPrev.Size = v;
+				_classPrev.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
+				_classPrev.SizeFlagsHorizontal = 0;
+				_classPrev.SizeFlagsVertical   = 0;
+			}
+
+			if (_spellPrev != null)
+			{
+				_spellPrev.CustomMinimumSize = v;
+				_spellPrev.Size = v;
+				_spellPrev.StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered;
+				_spellPrev.SizeFlagsHorizontal = 0;
+				_spellPrev.SizeFlagsVertical   = 0;
+			}
+
+			CustomMinimumSize = Vector2.Zero;
+			SizeFlagsHorizontal = 0;
+			SizeFlagsVertical   = 0;
 		}
 	}
 }

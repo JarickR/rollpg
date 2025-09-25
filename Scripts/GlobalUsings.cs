@@ -1,4 +1,9 @@
-// Scripts/GlobalUsings.cs
-// Makes DiceArena.Engine.Loadout.Log (and other types in that namespace) available everywhere.
-global using DiceArena.Engine.Loadout;
-using DiceArena.Godot;  // gives access to IconLibrary
+global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+
+// IMPORTANT: Use the top-level Godot namespace, not DiceArena.Godot
+global using Godot;
+
+// If you want easy access to your content models everywhere:
+global using DiceArena.Engine.Content;

@@ -1,0 +1,8 @@
+namespace DiceArena.Data
+namespace DiceArena.Engine
+namespace DiceArena.Engine.Content
+namespace DiceArena.Engine.Loadout
+namespace DiceArena.GameData
+namespace DiceArena.Godot
+namespace DiceArena.GodotApp
+namespace DiceArena.GodotUI

@@ -1,171 +1,101 @@
-using System.Collections.Generic;
+// HeroCard.cs
+// Display a hero with class + T1/T2 spell icons.
+
+using System;
 using Godot;
-using DiceArena.Engine.Content; // ClassDef, ContentBundle
-using DiceArena.Godot; // <-- add this line
 
-
-public partial class HeroCard : Control
+namespace DiceArena.Godot
 {
-	private VBoxContainer _root = default!;
-	private HBoxContainer _topRow = default!;
-	private HBoxContainer _t1Row = default!;
-	private HBoxContainer _t2Row = default!;
-	private Label _title = default!;
-
-	public override void _Ready()
+	public partial class HeroCard : Control
 	{
-		Name = "HeroCard";
-		CustomMinimumSize = new Vector2(280, 120);
+		// --- Configuration ----------------------------------------------------
+		private const int ICON_SIZE = 32; // <== pick what looks best on your card
 
-		_root = new VBoxContainer
+		// Optionally wire these in the Inspector (or leave empty and we'll search)
+		[Export] public NodePath ClassIconPath { get; set; } = default;
+		[Export] public NodePath Tier1IconPath  { get; set; } = default;
+		[Export] public NodePath Tier2IconPath  { get; set; } = default;
+		[Export] public NodePath NameLabelPath  { get; set; } = default;
+
+		// --- Nodes -------------------------------------------------------------
+		private TextureRect? _classIcon;
+		private TextureRect? _t1Icon;
+		private TextureRect? _t2Icon;
+		private Label?       _name;
+
+		public override void _Ready()
 		{
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical   = SizeFlags.ShrinkCenter,
-		};
-		_root.AddThemeConstantOverride("separation", 6);
-		AddChild(_root);
+			_classIcon = ResolveTextureRect(ClassIconPath) ?? Find<TextureRect>("ClassIcon", "Class", "ClassTex");
+			_t1Icon    = ResolveTextureRect(Tier1IconPath) ?? Find<TextureRect>("T1Icon", "Tier1", "Tier1Tex");
+			_t2Icon    = ResolveTextureRect(Tier2IconPath) ?? Find<TextureRect>("T2Icon", "Tier2", "Tier2Tex");
+			_name      = ResolveLabel(NameLabelPath)       ?? Find<Label>("Name", "Title");
 
-		// Top (class icon + title)
-		_topRow = new HBoxContainer
-		{
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical   = SizeFlags.ShrinkCenter,
-		};
-		_topRow.AddThemeConstantOverride("separation", 8);
-		_root.AddChild(_topRow);
-
-		_title = new Label
-		{
-			Text = "Member — Class",
-			ThemeTypeVariation = "Bold",
-			VerticalAlignment = VerticalAlignment.Center
-		};
-
-		// Tier 1 row
-		_t1Row = new HBoxContainer
-		{
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical   = SizeFlags.ShrinkCenter,
-		};
-		_t1Row.AddThemeConstantOverride("separation", 8);
-
-		// Tier 2 row
-		_t2Row = new HBoxContainer
-		{
-			SizeFlagsHorizontal = SizeFlags.ExpandFill,
-			SizeFlagsVertical   = SizeFlags.ShrinkCenter,
-		};
-		_t2Row.AddThemeConstantOverride("separation", 8);
-
-		// Labels for rows
-		var t1Label = new Label { Text = "T1:", VerticalAlignment = VerticalAlignment.Center };
-		var t2Label = new Label { Text = "T2:", VerticalAlignment = VerticalAlignment.Center };
-
-		var t1Wrap = new HBoxContainer();
-		t1Wrap.AddThemeConstantOverride("separation", 6);
-		t1Wrap.AddChild(t1Label);
-		t1Wrap.AddChild(_t1Row);
-
-		var t2Wrap = new HBoxContainer();
-		t2Wrap.AddThemeConstantOverride("separation", 6);
-		t2Wrap.AddChild(t2Label);
-		t2Wrap.AddChild(_t2Row);
-
-		_root.AddChild(t1Wrap);
-		_root.AddChild(t2Wrap);
-	}
-
-	/// <summary>
-	/// Build the card contents.
-	/// </summary>
-	/// <param name="cls">Class definition (Name used for title and class icon)</param>
-	/// <param name="t1">Tier 1 spell names</param>
-	/// <param name="t2">Tier 2 spell name (nullable)</param>
-	/// <param name="bundle">Content bundle (kept for signature compatibility)</param>
-	public void Setup(ClassDef cls, IEnumerable<string> t1, string? t2, ContentBundle bundle)
-	{
-		// Clear dynamic rows (keep container scaffolding)
-		ClearChildren(_topRow);
-		ClearChildren(_t1Row);
-		ClearChildren(_t2Row);
-
-		// Class icon
-		Texture2D? classTex = IconLibrary.GetClassTexture(cls.Name);
-		var classIcon = MakeIconOrFallback(classTex, "", new Color(0.82f, 0.75f, 0.0f)); // golden bg
-
-		// Title
-		_title.Text = $"Member — {cls.Name}";
-
-		_topRow.AddChild(classIcon);
-		_topRow.AddChild(_title);
-
-		// T1 spells
-		foreach (var s in t1)
-		{
-			var tex = IconLibrary.GetSpellTexture(s, 1);
-			_t1Row.AddChild(MakeIconOrFallback(tex, s, Colors.DarkSeaGreen));
+			// Safe defaults so nothing throws if a path isn't wired
+			if (_classIcon != null) _classIcon.Texture = IconLibrary.Transparent1x1;
+			if (_t1Icon    != null) _t1Icon.Texture    = IconLibrary.Transparent1x1;
+			if (_t2Icon    != null) _t2Icon.Texture    = IconLibrary.Transparent1x1;
 		}
 
-		// T2 spell (single, optional)
-		if (!string.IsNullOrWhiteSpace(t2))
+		// Public API you can call from elsewhere:
+		public void SetHero(string heroName, string classId, string? tier1SpellName, string? tier2SpellName)
 		{
-			var tex2 = IconLibrary.GetSpellTexture(t2!, 2);
-			_t2Row.AddChild(MakeIconOrFallback(tex2, t2!, Colors.SlateBlue));
+			if (_name != null)
+				_name.Text = heroName;
+
+			// NOTE: the only change vs your old code is the added ICON_SIZE argument.
+			if (_classIcon != null)
+				_classIcon.Texture = IconLibrary.GetClassTexture(classId, ICON_SIZE);
+
+			if (_t1Icon != null)
+				_t1Icon.Texture = tier1SpellName is { Length: > 0 }
+					? IconLibrary.GetSpellTexture(tier1SpellName, 1, ICON_SIZE)
+					: IconLibrary.Transparent1x1;
+
+			if (_t2Icon != null)
+				_t2Icon.Texture = tier2SpellName is { Length: > 0 }
+					? IconLibrary.GetSpellTexture(tier2SpellName, 2, ICON_SIZE)
+					: IconLibrary.Transparent1x1;
 		}
-	}
 
-	// ---------- helpers ----------
-
-	private static void ClearChildren(Node n)
-	{
-		for (int i = n.GetChildCount() - 1; i >= 0; i--)
-			n.GetChild(i).QueueFree();
-	}
-
-	/// <summary>
-	/// Builds an icon+caption pill. Accepts null texture and falls back to a transparent 1x1.
-	/// </summary>
-	private static Control MakeIconOrFallback(Texture2D? tex, string caption, Color bg)
-	{
-		var panel = new PanelContainer
+		// Convenience overload if you only want to set class:
+		public void SetClass(string classId)
 		{
-			SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
-			SizeFlagsVertical   = SizeFlags.ShrinkCenter,
-			CustomMinimumSize   = new Vector2(88, 28),
-		};
+			if (_classIcon != null)
+				_classIcon.Texture = IconLibrary.GetClassTexture(classId, ICON_SIZE);
+		}
 
-		var style = new StyleBoxFlat
+		// Convenience overloads for spells:
+		public void SetTier1(string? spellName)
 		{
-			BgColor = bg,
-			CornerRadiusTopLeft = 4,
-			CornerRadiusTopRight = 4,
-			CornerRadiusBottomLeft = 4,
-			CornerRadiusBottomRight = 4
-		};
-		panel.AddThemeStyleboxOverride("panel", style);
+			if (_t1Icon == null) return;
+			_t1Icon.Texture = spellName is { Length: > 0 }
+				? IconLibrary.GetSpellTexture(spellName, 1, ICON_SIZE)
+				: IconLibrary.Transparent1x1;
+		}
 
-		var row = new HBoxContainer();
-		row.AddThemeConstantOverride("separation", 6);
-		panel.AddChild(row);
-
-		var icon = new TextureRect
+		public void SetTier2(string? spellName)
 		{
-			StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-			CustomMinimumSize = new Vector2(22, 22),
-			Texture = tex ?? IconLibrary.Transparent1x1
-		};
-		row.AddChild(icon);
+			if (_t2Icon == null) return;
+			_t2Icon.Texture = spellName is { Length: > 0 }
+				? IconLibrary.GetSpellTexture(spellName, 2, ICON_SIZE)
+				: IconLibrary.Transparent1x1;
+		}
 
-		if (!string.IsNullOrWhiteSpace(caption))
+		// --- helpers -----------------------------------------------------------
+		private TextureRect? ResolveTextureRect(NodePath path)
+			=> path.IsEmpty ? null : GetNodeOrNull<TextureRect>(path);
+
+		private Label? ResolveLabel(NodePath path)
+			=> path.IsEmpty ? null : GetNodeOrNull<Label>(path);
+
+		private T? Find<T>(params string[] names) where T : CanvasItem
 		{
-			var label = new Label
+			foreach (var n in names)
 			{
-				Text = caption,
-				VerticalAlignment = VerticalAlignment.Center
-			};
-			row.AddChild(label);
+				var node = GetNodeOrNull<T>(n);
+				if (node != null) return node;
+			}
+			return null;
 		}
-
-		return panel;
 	}
 }

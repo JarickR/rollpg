@@ -1,80 +1,51 @@
 // Scripts/Godot/EnemyPanel.cs
 using Godot;
-using System.Collections.Generic;
-using DiceArena.GodotUI;
 
-namespace DiceArena.GodotUI
+namespace DiceArena.Godot
 {
-	/// <summary>
-	/// Very simple enemy list for smoke testing: shows name + HP and a Hit button.
-	/// Replace with your real enemy system later.
-	/// </summary>
-	public partial class EnemyPanel : VBoxContainer
+	public partial class EnemyPanel : Control
 	{
-		private VBoxContainer _list = default!;
-		private List<EnemyVM> _enemies = new();
+		// Hook these up in the scene (optional).
+		[Export] public NodePath? NameLabelPath { get; set; }
+		[Export] public NodePath? HpLabelPath { get; set; }
+		[Export] public NodePath? IconTextureRectPath { get; set; }
+
+		private Label? _name;
+		private Label? _hp;
+		private TextureRect? _icon;
 
 		public override void _Ready()
 		{
-			AddThemeConstantOverride("separation", 6);
+			_name = GetNodeOrNull<Label>(NameLabelPath);
+			_hp = GetNodeOrNull<Label>(HpLabelPath);
+			_icon = GetNodeOrNull<TextureRect>(IconTextureRectPath);
 
-			var title = new Label { Text = "Enemies" };
-			AddChild(title);
-
-			_list = new VBoxContainer();
-			AddChild(_list);
+			GD.Print("[EnemyPanel] Ready");
 		}
 
-		public void SetEnemies(IEnumerable<EnemyVM> enemies)
+		// ---- Public helpers you can call from other scripts ----
+
+		public void SetEnemyName(string name)
 		{
-			_enemies = new List<EnemyVM>(enemies);
-			Rebuild();
+			if (_name != null)
+				_name.Text = name;
 		}
 
-		private void Rebuild()
+		public void SetHp(int current, int max)
 		{
-			ClearChildren(_list);
-
-			if (_enemies.Count == 0)
-			{
-				_list.AddChild(new Label { Text = "(none)" });
-				return;
-			}
-
-			foreach (var e in _enemies)
-			{
-				var row = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-				row.AddChild(new Label { Text = e.Name, SizeFlagsHorizontal = SizeFlags.ExpandFill });
-
-				var hp = new Label { Text = $"HP: {e.HP}" };
-				row.AddChild(hp);
-
-				var hit = new Button { Text = "Hit" };
-				hit.Pressed += () =>
-				{
-					if (e.HP <= 0) return;
-					e.HP -= 1;
-					hp.Text = $"HP: {e.HP}";
-					Log.Damage($"{e.Name} takes 1 damage. ({e.HP} HP)");
-					if (e.HP <= 0) Log.System($"{e.Name} is defeated.");
-				};
-				row.AddChild(hit);
-
-				_list.AddChild(row);
-			}
+			if (_hp != null)
+				_hp.Text = $"{current}/{max}";
 		}
 
-		public sealed class EnemyVM
+		public void SetIcon(Texture2D? texture)
 		{
-			public string Name { get; set; } = "Goblin";
-			public int HP { get; set; } = 5;
+			if (_icon != null)
+				_icon.Texture = texture;
 		}
 
-		// ---- local helper ----
-		private static void ClearChildren(Node n)
+		public void DebugLog(string message)
 		{
-			foreach (var c in n.GetChildren())
-				(c as Node)?.QueueFree();
+			GD.Print($"[EnemyPanel] {message}");
 		}
 	}
 }

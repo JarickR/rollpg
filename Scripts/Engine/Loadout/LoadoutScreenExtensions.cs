@@ -1,11 +1,11 @@
 // Scripts/Engine/Loadout/LoadoutScreenExtensions.cs
-// DEPRECATED SHIM: Real extension methods (now optional) live under DiceArena.GodotUI.
-// This empty class prevents duplicate extension definitions in the Engine namespace.
+using Godot;
 
 namespace DiceArena.Engine.Loadout
 {
-	public static class LoadoutScreenExtensions_Deprecated
+	// Intentionally empty helper partial so we DON'T duplicate PeekFinalizedResult or signals.
+	public partial class LoadoutScreen : Control
 	{
-		// Intentionally empty.
+		// Put only unrelated helpers here if needed; do not re-declare signals or PeekFinalizedResult.
 	}
 }

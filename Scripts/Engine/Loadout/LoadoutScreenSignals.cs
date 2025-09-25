@@ -1,15 +1,13 @@
-// Scripts/Godot/LoadoutScreenSignals.cs
+// Scripts/Engine/Loadout/LoadoutScreenSignals.cs
+// Intentionally empty partial to avoid duplicate signal definitions.
+// Keep this file if you want to split helpers later, but do NOT declare [Signal] here.
+
 using Godot;
 
-namespace DiceArena.GodotUI
+namespace DiceArena.Engine.Loadout
 {
-	/// <summary>
-	/// Signals for the LoadoutScreen (split to mirror your project structure).
-	/// </summary>
 	public partial class LoadoutScreen : Control
 	{
-		// Bubble-up from member cards so other systems can subscribe at the screen level.
-		[Signal]
-		public delegate void SelectionChangedEventHandler(int memberIndex, string? classId, string[] tier1Ids, string? tier2Id);
+		// no signals here
 	}
 }

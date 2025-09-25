@@ -1,0 +1,226 @@
+	public class ClassDef
+	public class SpellDef
+		public List<string> Tags { get; set; } = new();
+		public static IReadOnlyList<ClassDef> Classes { get; private set; } = Array.Empty<ClassDef>();
+		public static IReadOnlyList<SpellDef> Spells  { get; private set; } = Array.Empty<SpellDef>();
+		public static void Load(ContentBundle bundle)
+		public static IReadOnlyList<SpellDef> GetTier(int tier) =>
+		public static void TakeTurn(Hero hero, Enemy enemy)
+		public static void TakeTurn(GameState state, int enemyIndex, int playerIndex)
+		public static void Cast(Hero caster, Enemy target, Spell spell)
+		public static void ResolvePlayerRoll(GameState state, int playerIndex, Face face)
+		public static void ResolvePlayerRoll(Hero hero, Face face, Enemy? target = null, GameState? state = null)
+		public static void ApplyDamage(Hero hero, int amount, bool bypassArmor)
+		public static void ApplyDamage(Enemy enemy, int amount, bool bypassArmor)
+		public static int DamageByTier(int tier) => tier switch { 1 => 2, 2 => 4, 3 => 6, _ => 1 };
+		public static int HealByTier(int tier)   => tier switch { 1 => 2, 2 => 4, 3 => 6, _ => 1 };
+		public static int ArmorByTier(int tier)  => tier switch { 1 => 2, 2 => 4, 3 => 6, _ => 1 };
+		public static int D6()  => Rng.Next(1, 7);
+		public static int D20() => Rng.Next(1, 21);
+		public static Face[] BuildFacesFor(Hero h)
+		public static Face RollFaceFor(Hero h)
+	public enum EncounterTier
+	public class Enemy
+		public Enemy() { }
+		public Enemy(string id, int hp = 8)
+		public Enemy(string id, string name, int tier, int maxHp, int armor = 0)
+		public void AddArmor(int amt) => Armor = System.Math.Max(0, Armor + System.Math.Max(0, amt));
+		public void Damage(int amt, bool bypassArmor)
+		public override string ToString() => $"{Id} {Name} (T{Tier}) HP {Hp}/{MaxHp} AR {Armor}";
+	public enum FaceType
+	public class Face
+		public Face() { Type = FaceType.Blank; Slot = -1; Spell = null; }
+		public Face(FaceType type) { Type = type; Slot = -1; Spell = null; }
+		public Face(FaceType type, int slot, Spell? spell = null)
+		public override string ToString()
+	public class GameState
+		public readonly List<Hero>  Players  = new();
+		public readonly List<Enemy> Enemies  = new();
+		public readonly List<string> Log     = new();
+		public readonly List<InitiativeEntry> Initiative = new();
+		public readonly Random Rng = new();
+		public void AddLog(string msg)
+		public void AddHero(Hero h)  { if (h == null) return; Players.Add(h);  AddLog($"Added hero: {h.Name} [{h.ClassId}]"); }
+		public void AddPlayer(Hero h) => AddHero(h);
+		public void AddEnemy(Enemy e) { if (e == null) return; Enemies.Add(e); AddLog($"Spawned enemy: {e.Name} (T{e.Tier})"); }
+		public void ClearEncounter()
+		public int RollD20() => Rng.Next(1, 21);
+		public Spell RandomT1Spell() => Spells.Tier1Pool[Rng.Next(Spells.Tier1Pool.Count)];
+		public Spell RandomT2Spell() => Spells.Tier2Pool[Rng.Next(Spells.Tier2Pool.Count)];
+		public Spell RollUpgradeCandidate(Spell current)
+		public void TickAllEnemyStatuses()
+		public List<InitiativeEntry> BuildInitiativeDefault()
+	public struct InitiativeEntry
+		public InitiativeEntry(string id, bool isEnemy, int roll)
+		public override string ToString() => $"{(IsEnemy ? "E" : "P")}:{Id}@{Roll}";
+	public enum DefenseType
+		public override string ToString() => Type.ToString();
+	public class Hero
+		public List<Spell> Loadout { get; set; } = new(4)
+		public Hero() { }
+		public Hero(string id, int maxHp = 20)
+		public Hero(string id, string name, string classId, int maxHp = 20, int armor = 0, IEnumerable<Spell>? loadout = null)
+		public Hero(string id, string name, string classId, int hp, int armor, bool usingHpNamedArg)
+		public void AddArmor(int amt) => Armor = System.Math.Max(0, Armor + System.Math.Max(0, amt));
+		public void Heal(int amt)      => Hp    = System.Math.Min(MaxHp, Hp + System.Math.Max(0, amt));
+		public void Damage(int amt, bool bypassArmor)
+		public void ClearLoadoutToBlanks()
+		public void SetSlot(int slot, Spell spell)
+		public void SetLoadout(IEnumerable<Spell> spells)
+		public override string ToString() => $"{Id} {Name} [{ClassId}] HP {Hp}/{MaxHp} AR {Armor}";
+	public class Hero
+		public System.Collections.Generic.List<Spell> Spells { get; } = new();
+		public Hero(string name, string classId)
+	public enum SpellKind
+	public class Spell
+		public Spell(string id, string name, int tier, SpellKind kind, string description = "", string iconKey = "")
+		public Spell()
+		public override string ToString() => $"{Name} (T{Tier}, {Kind})";
+		public static Spell FromKind(string kind, int tier, string? nameOverride = null)
+		public static Spell Blank()         => new Spell("blank", "Blank", 0, SpellKind.Blank, "No effect.");
+		public static Spell Attack(int t=1) => new Spell($"attack_t{t}", "Attack", t, SpellKind.Attack, "Physical strike.");
+		public static Spell Heal(int t=1)   => new Spell($"heal_t{t}",   "Heal",   t, SpellKind.Heal,   "Restore HP.");
+		public static Spell Armor(int t=1)  => new Spell($"armor_t{t}",  "Armor",  t, SpellKind.Armor,  "Gain armor.");
+		public static Spell Sweep(int t=1)  => new Spell($"sweep_t{t}",  "Sweep",  t, SpellKind.Sweep,  "Wide physical swing.");
+		public static Spell Concentration(int t=1)
+		public static Spell Fireball(int t=2)
+		public static Spell Poison(int t=2)
+		public static Spell Bomb(int t=2)
+		public static readonly List<Spell> Tier1Pool = new()
+		public static readonly List<Spell> Tier2Pool = new()
+		public static bool IsPhysical(Spell s) =>
+		public static bool BypassesArmor(Spell s) =>
+		public static Spell RandomFromTier(int tier, Random? rng = null)
+		public static ContentBundle LoadAll(string classesPath, string spellsPath)
+		public ContentBundle(IReadOnlyList<ClassDef> classes, IReadOnlyList<SpellDef> allSpells)
+		public static Texture2D Class(string classId, int size)
+		public static Texture2D ClassIcon(string classId, int size) => Class(classId, size);
+		public static Texture2D GetClass(string classId, int size) => Class(classId, size);
+		public static Texture2D Spell(string spellId, int tier, int size)
+		public static Texture2D SpellIcon(string spellId, int tier, int size) => Spell(spellId, tier, size);
+		public static Texture2D GetSpell(string spellId, int tier, int size) => Spell(spellId, tier, size);
+		public static Texture2D GetClassTexture(string classId, int size)
+		public static Texture2D GetSpellTexture(string spellId, int tier, int size)
+		public static void Clear() { /* intentionally empty */ }
+	public partial class IconTile : Button
+		public static IconTile Create(int size, Texture2D? tex, string header, string body)
+		public void SetTooltip(string header, string body)
+		public override Control _MakeCustomTooltip(string forText)
+	public class MemberLoadout : MemberSetup
+		public MemberLoadout() { }
+		public MemberLoadout(MemberSetup from)
+	public class PartyLoadout : PartySetup
+		public PartyLoadout() { }
+		public PartyLoadout(PartySetup from)
+		public static PartySetup BuildPartySetup(
+		public static List<DieFace> BuildMemberDie(ClassDef cls, IReadOnlyList<SpellDef> t1, SpellDef t2, Random? rng = null)
+	public partial class LoadoutMemberCard : HBoxContainer
+		public override void _Ready()
+		public void SetData(ClassDef cls, SpellDef? t1, SpellDef? t2, SpellDef? t3)
+	public enum DieFaceKind
+	public class DieFace
+		public List<SpellDef> Tier1 { get; set; } = new();
+		public List<SpellDef> Tier2 { get; set; } = new();
+		public List<MemberOffer> Members { get; } = new();
+		public void Clear() => Members.Clear();
+		public void Add(MemberOffer m) => Members.Add(m);
+	public class MemberSetup
+		public ClassDef Class { get; set; } = default!;
+		public List<SpellDef> Tier1 { get; set; } = new(); // exactly 2
+		public List<DieFace> Dice { get; set; } = new(6);  // built d6
+		public List<string> Tier1OfferIds { get; set; } = new();
+		public List<string> Tier2OfferIds { get; set; } = new();
+		public List<string> ChosenTier1SpellIds { get; set; } = new();
+	public class PartySetup
+		public List<MemberSetup> Members { get; set; } = new();
+	public partial class LoadoutScreen : Node
+		public void InjectContent(
+		public void Build(Control hostRoot, SpinBox? partySizeSpin = null)
+		public static bool IsEmpty(this NodePath p) => p == default || p.ToString() == string.Empty;
+	public partial class LoadoutScreen : Control
+		public delegate void SelectionChangedEventHandler(int memberIndex, string? classId, string[] tier1Ids, string? tier2Id);
+		public static PartyOffer BuildOffers(int partySize, IList<SpellDef> tier1Pool, IList<SpellDef> tier2Pool, int? seed = null)
+		public static PartyLoadout ToPartyLoadout(PartyOffer offers)
+		public static PartySetup Finalize(
+		public static void V(string msg)
+		public static void I(string msg) => GD.Print($"[Loadout] {msg}");
+		public static void W(string msg) => GD.PushWarning($"[Loadout][WARN] {msg}");
+		public static void E(string msg) => GD.PushError($"[Loadout][ERR] {msg}");
+		public static void Damage(string msg) => GD.Print($"[Loadout][DMG] {msg}");
+		public static void System(string msg) => GD.Print($"[Loadout][SYS] {msg}");
+		public static void Vf(string fmt, params object[] args)
+		public static void If(string fmt, params object[] args) => GD.Print($"[Loadout] {string.Format(fmt, args)}");
+		public static void Wf(string fmt, params object[] args) => GD.PushWarning($"[Loadout][WARN] {string.Format(fmt, args)}");
+		public static void Ef(string fmt, params object[] args) => GD.PushError($"[Loadout][ERR] {string.Format(fmt, args)}");
+		public static void Damagef(string fmt, params object[] args) => GD.Print($"[Loadout][DMG] {string.Format(fmt, args)}");
+		public static void Systemf(string fmt, params object[] args) => GD.Print($"[Loadout][SYS] {string.Format(fmt, args)}");
+		public static void PushParagraph(this RichTextLabel rtl)
+		public static string BuildClassTooltip(ClassDef c)
+		public static string BuildSpellTooltip(SpellDef s)
+	public partial class BattleLogPanel : VBoxContainer
+		public override void _Ready()
+		public void AppendLine(string text) => AppendLine(text, null);
+		public void AppendLine(string text, Color? color)
+		public void Clear()
+	public partial class BattleRoot : Control
+		public override void _Ready()
+		public void ShowEnemy(string classId, string? t1, string? t2)
+		public static void MakeReadOnly(TextEdit? te)
+		public static int GetLineCountSafe(Node? node)
+	public partial class EnemyCard : VBoxContainer
+		public override void _Ready()
+		public void Bind(string name, int tier, int hp, int hpMax, int armor, Texture2D icon)
+	public partial class EnemyPanel : Control
+		public override void _Ready()
+		public void SetEnemyName(string name)
+		public void SetHp(int current, int max)
+		public void SetIcon(Texture2D? texture)
+		public void DebugLog(string message)
+	public partial class Game : Node
+		public override void _Ready()
+	public partial class HeroCard : Control
+		public override void _Ready()
+		public void SetHero(string heroName, string classId, string? tier1SpellName, string? tier2SpellName)
+		public void SetClass(string classId)
+		public void SetTier1(string? spellName)
+		public void SetTier2(string? spellName)
+	public partial class HeroPanel : G.Control
+		public override void _Ready()
+	public partial class HeroStrip : PanelContainer
+		public override void _Ready()
+		public void SetClassName(string className) => _classLabel.Text = className;
+		public void SetFaces(IReadOnlyList<string> faces)
+	public partial class HoverBubble : Panel
+		public HoverBubble()
+		public override void _Ready()
+		public void AttachToScene(SceneTree tree)
+		public void ShowBubble(string text, Vector2 screenPos)
+		public void ShowBubbleNear(string text, Rect2 anchorRect)
+		public void HideBubble() => Visible = false;
+	public partial class IconFlushOnBoot : Node
+		public override void _Ready()
+		public static void ClearCache()
+		public static Texture2D GetClassTexture(string classId, int size)
+		public static Texture2D GetSpellTexture(string spellId, int tier, int size)
+	public partial class IconSizeProbe : Control
+		public override void _Ready()
+		public override void _Process(double delta)
+	public partial class RollPopup : PanelContainer
+		public override void _Ready()
+		public void ShowText(string text)
+		public static void ToBottom(Node node)
+		public static void DoScrollToBottom(Node node)
+		public static Label MakeLabel(string text, int fontSize = 14, bool bold = false, bool wrap = true)
+		public static Panel MakeTitledPanel(string title, Control content, int titleSize = 16)
+		public static TextureProgressBar MakeHpBar(int max = 20, int value = 20, Vector2? minSize = null)
+		public static Control HSpacer()
+		public static VBoxContainer VBox(int separation = 8)
+		public static HBoxContainer HBox(int separation = 8)
+	public partial class UpgradeChooser : Control
+		public override void _Ready()
+		public override void _UnhandledKeyInput(InputEvent e)
+		public void Configure(string[] faceNames, bool[] upgradable)
+	public partial class Loadout_Deprecated_IgnoreMe : Control
+		public static void ApplyNearestTextureFilter(
+		public static void ApplyNearestTextureFilter(Node root)
+		public static void ForceNearestOnAllIcons(this Node root)
