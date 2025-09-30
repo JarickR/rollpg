@@ -1,44 +1,39 @@
-// Scripts/Godot/Game.cs
+// Scripts/Engine/Game.cs
 using Godot;
-using DiceArena.Engine.Loadout;
 
 namespace DiceArena.Godot
 {
 	/// <summary>
-	/// Simple screen switcher: Loadout -> (Finalize) -> Battle.
+	/// Very small game state container (autoload/singleton).
+	/// Add this script to an autoload named "Game" (Project Settings → AutoLoad).
 	/// </summary>
 	public partial class Game : Node
 	{
-		[Export] public NodePath LoadoutScreenPath { get; set; } = new NodePath();
-		[Export] public NodePath BattleRootPath   { get; set; } = new NodePath();
+		public static Game I { get; private set; } = null!;
 
-		private LoadoutScreen? _loadout;
-		private Control? _battleRoot;
+		public override void _EnterTree() => I = this;
 
-		public override void _Ready()
+		// -------- Party state ----------
+		public int PartySize { get; private set; } = 1;
+
+		/// <summary>Up to 4 members; only index 0 is used right now.</summary>
+		public readonly PartyMember[] Members = new PartyMember[4];
+
+		public void SetPartySize(int size) => PartySize = Mathf.Clamp(size, 1, 4);
+
+		public void SetMember(int index, PartyMember m)
 		{
-			_loadout   = GetNodeOrNull<LoadoutScreen>(LoadoutScreenPath);
-			_battleRoot = GetNodeOrNull<Control>(BattleRootPath);
-
-			if (_loadout != null)
-				_loadout.Finalized += OnLoadoutFinalized;
-
-			// Start on loadout
-			if (_loadout != null) _loadout.Visible = true;
-			if (_battleRoot != null) _battleRoot.Visible = false;
+			if (index < 0 || index >= Members.Length) return;
+			Members[index] = m;
 		}
+	}
 
-		private void OnLoadoutFinalized(int partySize, string[] playersJson)
-		{
-			GD.Print($"[Game] Received finalize: party={partySize}, players={playersJson.Length}");
-
-			if (_loadout != null) _loadout.Visible = false;
-			if (_battleRoot != null) _battleRoot.Visible = true;
-
-			// If your BattleRoot script needs the payload, you can look it up and pass it here.
-			// Example:
-			// var br = _battleRoot as BattleRoot;
-			// br?.InitializeFromLoadout(partySize, playersJson);
-		}
+	/// <summary>Simple DTO for the hero shown on the battle screen.</summary>
+	public struct PartyMember
+	{
+		public string Name;        // Display (e.g. "You")
+		public string ClassId;     // e.g. "Thief"
+		public string? Tier1;      // e.g. "attack"
+		public string? Tier2;      // e.g. "attackplus"
 	}
 }
