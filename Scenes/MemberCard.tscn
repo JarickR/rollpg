@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=3 uid="uid://d4ewlmx3ncbfg"]
+
+[ext_resource type="Script" uid="uid://d10dejx3oxe53" path="res://Scripts/Godot/MemberCard.cs" id="1_txce0"]
+
+[node name="MemberCard" type="Button"]
+offset_right = 152.0
+offset_bottom = 168.0
+script = ExtResource("1_txce0")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+offset_right = 152.0
+offset_bottom = 168.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="ClassRow" type="GridContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+columns = 5
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/ClassRow"]
+layout_mode = 2
+text = "Class:"
+
+[node name="ClassIcon" type="TextureRect" parent="MarginContainer/VBoxContainer/ClassRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+
+[node name="Tier1SpellsRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/Tier1SpellsRow"]
+layout_mode = 2
+text = "Tier 1:"
+
+[node name="T1IconA" type="TextureRect" parent="MarginContainer/VBoxContainer/Tier1SpellsRow"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="T1IconB" type="TextureRect" parent="MarginContainer/VBoxContainer/Tier1SpellsRow"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="Tier2SpellsRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/Tier2SpellsRow"]
+layout_mode = 2
+text = "Tier 2:"
+
+[node name="T2Icon" type="TextureRect" parent="MarginContainer/VBoxContainer/Tier2SpellsRow"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2

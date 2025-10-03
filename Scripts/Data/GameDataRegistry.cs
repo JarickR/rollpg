@@ -1,142 +1,100 @@
-// File: Scripts/Data/GameDataRegistry.cs
+// Scripts/Data/GameDataRegistry.cs
+using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace DiceArena.Data
 {
 	/// <summary>
-	/// Centralized, read-only view of game content.
-	/// Supports bundles that expose a flat Spells list or tiered spell properties.
+	/// Loads classes.json + spells.json from the Content folder and exposes simple queries.
+	/// Safe to call LoadAll() many times; it loads only once.
 	/// </summary>
 	public static class GameDataRegistry
 	{
-		// Use fully-qualified content types to avoid any local type name collisions.
-		public static IReadOnlyList<global::DiceArena.Engine.Content.ClassDef> Classes { get; private set; } = Array.Empty<global::DiceArena.Engine.Content.ClassDef>();
-		public static IReadOnlyList<global::DiceArena.Engine.Content.SpellDef>  Spells  { get; private set; } = Array.Empty<global::DiceArena.Engine.Content.SpellDef>();
+		private static readonly List<ClassData> _classes = new();
+		private static readonly List<SpellData> _spells  = new();
+		private static bool _loaded;
 
-		public static IReadOnlyDictionary<string, global::DiceArena.Engine.Content.ClassDef> ClassById { get; private set; }
-			= new Dictionary<string, global::DiceArena.Engine.Content.ClassDef>(StringComparer.OrdinalIgnoreCase);
+		// 🔒 Content-only locations (put your JSON in one of these).
+		private const string ClassesPrimaryPath = "res://Content/Data/classes.json";
+		private const string SpellsPrimaryPath  = "res://Content/Data/spells.json";
 
-		public static IReadOnlyDictionary<string, global::DiceArena.Engine.Content.SpellDef> SpellById { get; private set; }
-			= new Dictionary<string, global::DiceArena.Engine.Content.SpellDef>(StringComparer.OrdinalIgnoreCase);
-
-		public static IReadOnlyDictionary<int, IReadOnlyList<global::DiceArena.Engine.Content.SpellDef>> SpellsByTier { get; private set; }
-			= new Dictionary<int, IReadOnlyList<global::DiceArena.Engine.Content.SpellDef>>();
-
-		public static void Load(global::DiceArena.Engine.Content.ContentBundle bundle)
+		// Optional fallback within Content if you prefer a flatter structure.
+		private static readonly string[] ClassesFallbacks =
 		{
-			if (bundle == null) throw new ArgumentNullException(nameof(bundle));
+			"res://Content/classes.json"
+		};
 
-			// Classes
-			var classesLocal = bundle.Classes;
-			Classes = classesLocal == null
-				? Array.Empty<global::DiceArena.Engine.Content.ClassDef>()
-				: (IReadOnlyList<global::DiceArena.Engine.Content.ClassDef>)classesLocal;
+		private static readonly string[] SpellsFallbacks =
+		{
+			"res://Content/spells.json"
+		};
 
-			ClassById = Classes
-				.GroupBy(c => c.Id, StringComparer.OrdinalIgnoreCase)
-				.ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+		public static void LoadAll()
+		{
+			if (_loaded) return;
 
-			// Spells
-			var spells = ExtractSpellsFromBundle(bundle);
-			Spells = spells
-				.OrderBy(s => s.Tier)
-				.ThenBy(s => s.Name ?? s.Id)
-				.ThenBy(s => s.Id)
-				.ToList();
+			_classes.Clear();
+			_spells.Clear();
 
-			SpellById = Spells
-				.GroupBy(s => s.Id, StringComparer.OrdinalIgnoreCase)
-				.ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+			LoadJsonList(FindContentPath(ClassesPrimaryPath, ClassesFallbacks), _classes);
+			LoadJsonList(FindContentPath(SpellsPrimaryPath, SpellsFallbacks), _spells);
 
-			// Buckets 1..3
-			var byTier = Spells
-				.GroupBy(s => s.Tier)
-				.ToDictionary(
-					g => g.Key,
-					g => (IReadOnlyList<global::DiceArena.Engine.Content.SpellDef>)g
-						.OrderBy(x => x.Name ?? x.Id)
-						.ThenBy(x => x.Id)
-						.ToList()
-				);
-
-			for (int t = 1; t <= 3; t++)
-				if (!byTier.ContainsKey(t))
-					byTier[t] = Array.Empty<global::DiceArena.Engine.Content.SpellDef>();
-
-			SpellsByTier = byTier;
+			GD.Print($"[Registry] (Content) classes={_classes.Count}, spells={_spells.Count}");
+			_loaded = true;
 		}
 
-		/// <summary>
-		/// Returns a flattened spell list from a bundle without mutating registry state.
-		/// </summary>
-		public static List<global::DiceArena.Engine.Content.SpellDef> GetAllSpells(global::DiceArena.Engine.Content.ContentBundle bundle)
+		public static IEnumerable<ClassData> GetAllClasses()
 		{
-			if (bundle == null) throw new ArgumentNullException(nameof(bundle));
-
-			// Prefer flat AllSpells
-			var flatAll = TryReadEnumerable(bundle, "AllSpells");
-			if (flatAll != null)
-				return flatAll.OrderBy(s => s.Tier).ThenBy(s => s.Name ?? s.Id).ThenBy(s => s.Id).ToList();
-
-			// Else flat Spells
-			var flat = TryReadEnumerable(bundle, "Spells");
-			if (flat != null)
-				return flat.OrderBy(s => s.Tier).ThenBy(s => s.Name ?? s.Id).ThenBy(s => s.Id).ToList();
-
-			// Else flatten tiered
-			return ExtractSpellsFromBundle(bundle)
-				.OrderBy(s => s.Tier).ThenBy(s => s.Name ?? s.Id).ThenBy(s => s.Id).ToList();
+			if (!_loaded) LoadAll();
+			return _classes;
 		}
 
-		public static IReadOnlyList<global::DiceArena.Engine.Content.SpellDef> GetTier(int tier) =>
-			SpellsByTier.TryGetValue(tier, out var list) ? list : Array.Empty<global::DiceArena.Engine.Content.SpellDef>();
-
-		// ---- internals ----
-
-		private static IReadOnlyList<global::DiceArena.Engine.Content.SpellDef> ExtractSpellsFromBundle(global::DiceArena.Engine.Content.ContentBundle bundle)
+		public static IEnumerable<SpellData> GetSpellsByTier(int tier)
 		{
-			// Prefer flat 'Spells'
-			var propSpells = bundle.GetType().GetProperty("Spells");
-			if (propSpells != null &&
-				typeof(IEnumerable<global::DiceArena.Engine.Content.SpellDef>).IsAssignableFrom(propSpells.PropertyType))
-			{
-				var val = (IEnumerable<global::DiceArena.Engine.Content.SpellDef>?)propSpells.GetValue(bundle);
-				return (val ?? Enumerable.Empty<global::DiceArena.Engine.Content.SpellDef>()).ToList();
-			}
+			if (!_loaded) LoadAll();
+			return _spells.Where(s => s.Tier == tier);
+		}
 
-			// Try tiered variants
-			var tierNames = new[]
-			{
-				"SpellsTier1","SpellsTier2","SpellsTier3",
-				"SpellsT1","SpellsT2","SpellsT3"
-			};
+		// --- internals -------------------------------------------------------------
 
-			var collected = new List<global::DiceArena.Engine.Content.SpellDef>(64);
-			foreach (var propName in tierNames)
-			{
-				var p = bundle.GetType().GetProperty(propName);
-				if (p == null) continue;
+		private static string? FindContentPath(string primary, string[] fallbacks)
+		{
+			if (FileAccess.FileExists(primary)) return primary;
+			foreach (var f in fallbacks)
+				if (FileAccess.FileExists(f)) return f;
 
-				if (typeof(IEnumerable<global::DiceArena.Engine.Content.SpellDef>).IsAssignableFrom(p.PropertyType))
+			GD.PushWarning($"[Registry] No JSON found under Content for: {primary}");
+			return null;
+		}
+
+		private static void LoadJsonList<T>(string? path, List<T> target)
+		{
+			if (string.IsNullOrEmpty(path)) return;
+
+			try
+			{
+				using var f = FileAccess.Open(path, FileAccess.ModeFlags.Read);
+				var json = f.GetAsText();
+
+				var opts = new JsonSerializerOptions
 				{
-					var list = (IEnumerable<global::DiceArena.Engine.Content.SpellDef>?)p.GetValue(bundle);
-					if (list != null)
-						collected.AddRange(list);
-				}
+					ReadCommentHandling = JsonCommentHandling.Skip,
+					AllowTrailingCommas = true,
+					PropertyNameCaseInsensitive = true
+				};
+
+				var list = JsonSerializer.Deserialize<List<T>>(json, opts);
+				if (list != null) target.AddRange(list);
+
+				GD.Print($"[Registry] Loaded {typeof(T).Name} x{target.Count} from {path}");
 			}
-
-			return collected;
-		}
-
-		private static List<global::DiceArena.Engine.Content.SpellDef>? TryReadEnumerable(global::DiceArena.Engine.Content.ContentBundle bundle, string property)
-		{
-			var p = bundle.GetType().GetProperty(property);
-			if (p == null) return null;
-			if (!typeof(IEnumerable<global::DiceArena.Engine.Content.SpellDef>).IsAssignableFrom(p.PropertyType)) return null;
-			var val = (IEnumerable<global::DiceArena.Engine.Content.SpellDef>?)p.GetValue(bundle);
-			return val?.ToList();
+			catch (Exception ex)
+			{
+				GD.PushError($"[Registry] Failed loading {typeof(T).Name} from {path}: {ex.Message}");
+			}
 		}
 	}
 }

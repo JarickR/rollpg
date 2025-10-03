@@ -1,12 +1,13 @@
-[gd_scene load_steps=8 format=3 uid="uid://dalkd4gr4dlrq"]
+[gd_scene load_steps=9 format=3 uid="uid://dalkd4gr4dlrq"]
 
 [ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1"]
 [ext_resource type="Script" uid="uid://cw3b8jlbg5fa4" path="res://Scripts/Godot/BattleLogPanel.cs" id="2"]
 [ext_resource type="Script" uid="uid://wcwow2wkvylk" path="res://Scripts/Godot/EnemyPanel.cs" id="2_p0hwe"]
 [ext_resource type="Script" uid="uid://ejg081jx0w6i" path="res://Scripts/Godot/BattleRoot.cs" id="2_vt32t"]
-[ext_resource type="Script" uid="uid://dnibjj4mf5psp" path="res://Scripts/Engine/Loadout/LoadoutScreen.cs" id="5_fyhyk"]
 [ext_resource type="Script" uid="uid://bsasdyrgmkamm" path="res://Scripts/Godot/HeroCard.cs" id="5_qwuey"]
 [ext_resource type="Script" uid="uid://emvjb148wv62" path="res://Scripts/Godot/LoadoutToBattleBridge.cs" id="7_7vkth"]
+[ext_resource type="PackedScene" uid="uid://d4ewlmx3ncbfg" path="res://Scenes/MemberCard.tscn" id="7_o8ewf"]
+[ext_resource type="PackedScene" uid="uid://djwyy84baep1n" path="res://Scenes/LoadoutScreen.tscn" id="8_o8ewf"]
 
 [node name="GameRoot" type="Control"]
 z_index = 100
@@ -29,8 +30,10 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_vt32t")
-LogBoxPath = NodePath("HSplitContainer/LeftCol/LogBox")
-HeroPanelPath = NodePath("HeroCard")
+HeroCardScene = ExtResource("7_o8ewf")
+FriendlyRootPath = NodePath("HSplitContainer/LeftCol/HeroPanel")
+EnemyRootPath = NodePath("HSplitContainer/LeftCol/EnemyPanel")
+LogRootPath = NodePath("HSplitContainer/LeftCol/LogBox")
 
 [node name="HSplitContainer" type="HSplitContainer" parent="BattleRoot"]
 layout_mode = 0
@@ -138,84 +141,18 @@ layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
 
-[node name="LoadoutScreen" type="Control" parent="."]
-unique_name_in_owner = true
-top_level = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("5_fyhyk")
-FinalizeButtonPath = NodePath("LayoutRoot/FooterRow/FinalizeBtn")
-
-[node name="LayoutRoot" type="VBoxContainer" parent="LoadoutScreen"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-
-[node name="PartySizeRow" type="HBoxContainer" parent="LoadoutScreen/LayoutRoot"]
-layout_mode = 2
-
-[node name="PartySizeSpin" type="SpinBox" parent="LoadoutScreen/LayoutRoot/PartySizeRow"]
-unique_name_in_owner = true
-layout_mode = 2
-min_value = 1.0
-max_value = 4.0
-value = 1.0
-update_on_text_changed = true
-
-[node name="MainRow" type="HSplitContainer" parent="LoadoutScreen/LayoutRoot"]
-layout_mode = 2
-
-[node name="LeftPanel" type="VBoxContainer" parent="LoadoutScreen/LayoutRoot/MainRow"]
-layout_mode = 2
-
-[node name="ClassLabel" type="Label" parent="LoadoutScreen/LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-text = "Class"
-
-[node name="ClassRow" type="HBoxContainer" parent="LoadoutScreen/LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-
-[node name="Tier1SpellLabel" type="Label" parent="LoadoutScreen/LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-text = "Tier 1 Spell"
-
-[node name="Tier1Row" type="GridContainer" parent="LoadoutScreen/LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-columns = 3
-
-[node name="Tier2SpellLabel" type="Label" parent="LoadoutScreen/LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-text = "Tier 2 Spell"
-
-[node name="Tier2Row" type="GridContainer" parent="LoadoutScreen/LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-columns = 2
-
-[node name="RightPanel" type="VBoxContainer" parent="LoadoutScreen/LayoutRoot/MainRow"]
-layout_mode = 2
-
-[node name="MemberCardsRoot" type="GridContainer" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel"]
-unique_name_in_owner = true
-layout_mode = 2
-columns = 5
-
-[node name="FooterRow" type="HBoxContainer" parent="LoadoutScreen/LayoutRoot"]
-layout_mode = 2
-
-[node name="Control" type="Control" parent="LoadoutScreen/LayoutRoot/FooterRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="FinalizeBtn" type="Button" parent="LoadoutScreen/LayoutRoot/FooterRow"]
-layout_mode = 2
-text = "Finalize"
-
 [node name="LoadoutToBattleBridge" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("7_7vkth")
 LoadoutScreenPath = NodePath("../LoadoutScreen")
 BattleRootPath = NodePath("../BattleRoot")
+FinalizeButtonPath = NodePath("../LoadoutScreen/LayoutRoot/HeaderRow/FinalizeBtn")
+
+[node name="LoadoutScreen" parent="." instance=ExtResource("8_o8ewf")]
+layout_mode = 1
+
+[editable path="LoadoutScreen"]
+[editable path="LoadoutScreen/LayoutRoot/MainRow/PanelScroll/RightPanel/PlayerLoadoutPanel"]
+[editable path="LoadoutScreen/LayoutRoot/MainRow/PanelScroll/RightPanel/PlayerLoadoutPanel2"]
+[editable path="LoadoutScreen/LayoutRoot/MainRow/PanelScroll/RightPanel/PlayerLoadoutPanel3"]
+[editable path="LoadoutScreen/LayoutRoot/MainRow/PanelScroll/RightPanel/PlayerLoadoutPanel4"]

@@ -1,0 +1,268 @@
+[
+  {
+	"id": "attack",
+	"name": "Attack",
+	"tier": 1,
+	"kind": "attack",
+	"text": "Deal 2 damage to a single target.",
+	"order": 0
+  },
+  {
+	"id": "heal",
+	"name": "Heal",
+	"tier": 1,
+	"kind": "heal",
+	"text": "Restore 2 HP to a single ally.",
+	"order": 1
+  },
+  {
+	"id": "shield",
+	"name": "Shield",
+	"tier": 1,
+	"kind": "shield",
+	"text": "Grant 1 Armor to a single ally.",
+	"order": 2
+  },
+  {
+	"id": "spikedshield",
+	"name": "Spiked Shield",
+	"tier": 1,
+	"kind": "shield",
+	"text": "Grant 1 Armor. When hit, deal 1 damage back.",
+	"order": 3
+  },
+  {
+	"id": "fireball",
+	"name": "Fireball",
+	"tier": 1,
+	"kind": "fireball",
+	"text": "Deal 1 damage to a single target. Ignores Armor.",
+	"order": 4
+  },
+  {
+	"id": "stab",
+	"name": "Stab",
+	"tier": 1,
+	"kind": "attack",
+	"text": "Deal 1 damage and apply Bleed (1 dmg at start of enemy’s turn).",
+	"order": 5
+  },
+  {
+	"id": "sweep",
+	"name": "Sweep",
+	"tier": 1,
+	"kind": "attack",
+	"text": "Deal 1 damage to up to two adjacent targets.",
+	"order": 6
+  },
+  {
+	"id": "freeze",
+	"name": "Freeze",
+	"tier": 1,
+	"kind": "control",
+	"text": "Stun a target for 1 turn (skip its next action).",
+	"order": 7
+  },
+  {
+	"id": "cragshot",
+	"name": "Crag Shot",
+	"tier": 1,
+	"kind": "attack",
+	"text": "Deal 1 damage and reduce target’s Armor by 1 this turn.",
+	"order": 8
+  },
+  {
+	"id": "chainlightning",
+	"name": "Chain Lightning",
+	"tier": 1,
+	"kind": "attack",
+	"text": "Deal 1 damage to a target; jumps to another target for 1 damage.",
+	"order": 9
+  },
+
+  {
+	"id": "attackplus",
+	"name": "Attack+",
+	"tier": 2,
+	"kind": "attack",
+	"text": "Deal 2 damage. If target has a condition, deal +1.",
+	"order": 10
+  },
+  {
+	"id": "healplus",
+	"name": "Heal+",
+	"tier": 2,
+	"kind": "heal",
+	"text": "Restore 3 HP to a single ally.",
+	"order": 11
+  },
+  {
+	"id": "shieldplus",
+	"name": "Shield+",
+	"tier": 2,
+	"kind": "shield",
+	"text": "Grant 2 Armor to a single ally.",
+	"order": 12
+  },
+  {
+	"id": "spikedshieldplus",
+	"name": "Spiked Shield+",
+	"tier": 2,
+	"kind": "shield",
+	"text": "Grant 1 Armor. When hit, deal 2 damage back.",
+	"order": 13
+  },
+  {
+	"id": "fireballplus",
+	"name": "Fireball+",
+	"tier": 2,
+	"kind": "fireball",
+	"text": "Deal 2 damage that ignores Armor.",
+	"order": 14
+  },
+  {
+	"id": "stabplus",
+	"name": "Stab+",
+	"tier": 2,
+	"kind": "attack",
+	"text": "Deal 2 damage and apply Bleed (2 dmg at start of enemy’s turn).",
+	"order": 15
+  },
+  {
+	"id": "sweepplus",
+	"name": "Sweep+",
+	"tier": 2,
+	"kind": "attack",
+	"text": "Deal 2 damage split among up to two adjacent targets.",
+	"order": 16
+  },
+  {
+	"id": "freezeplus",
+	"name": "Freeze+",
+	"tier": 2,
+	"kind": "control",
+	"text": "Stun a target for 1 turn and reduce its Armor by 1.",
+	"order": 17
+  },
+  {
+	"id": "cragshotplus",
+	"name": "Crag Shot+",
+	"tier": 2,
+	"kind": "attack",
+	"text": "Deal 2 damage and strip 1 Armor.",
+	"order": 18
+  },
+  {
+	"id": "chainlightningplus",
+	"name": "Chain Lightning+",
+	"tier": 2,
+	"kind": "attack",
+	"text": "Deal 1 damage that chains to up to 2 additional targets.",
+	"order": 19
+  },
+  {
+	"id": "bomb",
+	"name": "Bomb",
+	"tier": 2,
+	"kind": "attack",
+	"text": "Place a bomb on a tile; explodes for 2 area damage next turn.",
+	"order": 20
+  },
+  {
+	"id": "concentration",
+	"name": "Concentration",
+	"tier": 2,
+	"kind": "buff",
+	"text": "Your next die this turn gains +2.",
+	"order": 21
+  },
+  {
+	"id": "poison",
+	"name": "Poison",
+	"tier": 2,
+	"kind": "debuff",
+	"text": "Apply Poison (1 damage at end of target’s turn, 3 turns).",
+	"order": 22
+  },
+
+  {
+	"id": "attackplusplus",
+	"name": "Attack++",
+	"tier": 3,
+	"kind": "attack",
+	"text": "Deal 3 damage. If target has a condition, deal +2.",
+	"order": 23
+  },
+  {
+	"id": "healplusplus",
+	"name": "Heal++",
+	"tier": 3,
+	"kind": "heal",
+	"text": "Restore 4 HP to a single ally.",
+	"order": 24
+  },
+  {
+	"id": "shieldplusplus",
+	"name": "Shield++",
+	"tier": 3,
+	"kind": "shield",
+	"text": "Grant 3 Armor to a single ally.",
+	"order": 25
+  },
+  {
+	"id": "spikedshieldplusplus",
+	"name": "Spiked Shield++",
+	"tier": 3,
+	"kind": "shield",
+	"text": "Grant 2 Armor. When hit, deal 3 damage back.",
+	"order": 26
+  },
+  {
+	"id": "fireballplusplus",
+	"name": "Fireball++",
+	"tier": 3,
+	"kind": "fireball",
+	"text": "Deal 3 damage that ignores Armor.",
+	"order": 27
+  },
+  {
+	"id": "stabplusplus",
+	"name": "Stab++",
+	"tier": 3,
+	"kind": "attack",
+	"text": "Deal 3 damage and apply Bleed (3 dmg at start of enemy’s turn).",
+	"order": 28
+  },
+  {
+	"id": "sweepplusplus",
+	"name": "Sweep++",
+	"tier": 3,
+	"kind": "attack",
+	"text": "Deal 3 damage split among up to two adjacent targets.",
+	"order": 29
+  },
+  {
+	"id": "freezeplusplus",
+	"name": "Freeze++",
+	"tier": 3,
+	"kind": "control",
+	"text": "Stun a target for 2 turns.",
+	"order": 30
+  },
+  {
+	"id": "cragshotplusplus",
+	"name": "Crag Shot++",
+	"tier": 3,
+	"kind": "attack",
+	"text": "Deal 3 damage and strip 2 Armor.",
+	"order": 31
+  },
+  {
+	"id": "chainlightningplusplus",
+	"name": "Chain Lightning++",
+	"tier": 3,
+	"kind": "attack",
+	"text": "Deal 2 damage that chains to up to 3 additional targets.",
+	"order": 32
+  }
+]

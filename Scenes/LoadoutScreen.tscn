@@ -1,0 +1,120 @@
+[gd_scene load_steps=3 format=3 uid="uid://djwyy84baep1n"]
+
+[ext_resource type="Script" uid="uid://dnibjj4mf5psp" path="res://Scripts/Engine/Loadout/LoadoutScreen.cs" id="1_rgomp"]
+[ext_resource type="PackedScene" uid="uid://da4ara70hfel6" path="res://Scenes/PlayerLoadoutPanel.tscn" id="4_kxik3"]
+
+[node name="LoadoutScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_rgomp")
+MemberCardsContainerPath = NodePath("LayoutRoot/MainRow/PanelScroll/RightPanel")
+
+[node name="LayoutRoot" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 268.0
+offset_bottom = 103.0
+
+[node name="PartySizeButtonContainer" type="HBoxContainer" parent="LayoutRoot"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="LayoutRoot/PartySizeButtonContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+toggle_mode = true
+text = "1"
+
+[node name="Button2" type="Button" parent="LayoutRoot/PartySizeButtonContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+toggle_mode = true
+text = "2"
+
+[node name="Button3" type="Button" parent="LayoutRoot/PartySizeButtonContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+toggle_mode = true
+text = "3"
+
+[node name="Button4" type="Button" parent="LayoutRoot/PartySizeButtonContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+toggle_mode = true
+text = "4"
+
+[node name="HeaderRow" type="HBoxContainer" parent="LayoutRoot"]
+layout_mode = 2
+
+[node name="Spacer" type="Control" parent="LayoutRoot/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FinalizeBtn" type="Button" parent="LayoutRoot/HeaderRow"]
+layout_mode = 2
+text = "Finalize"
+
+[node name="MainRow" type="HBoxContainer" parent="LayoutRoot"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="LeftPanel" type="GridContainer" parent="LayoutRoot/MainRow"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Class" type="Label" parent="LayoutRoot/MainRow/LeftPanel"]
+layout_mode = 2
+text = "Class"
+
+[node name="ClassSelectionContainer" type="GridContainer" parent="LayoutRoot/MainRow/LeftPanel"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+columns = 5
+
+[node name="Tier 1 Spells (Pick 2)" type="Label" parent="LayoutRoot/MainRow/LeftPanel"]
+layout_mode = 2
+text = "Tier 1 Spells (Pick 2)"
+
+[node name="Tier1SpellContainer" type="GridContainer" parent="LayoutRoot/MainRow/LeftPanel"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+theme_override_constants/h_separation = 8
+columns = 3
+
+[node name="Tier 2 Spells (Pick 2)2" type="Label" parent="LayoutRoot/MainRow/LeftPanel"]
+layout_mode = 2
+text = "Tier 2 Spells (Pick 2)"
+
+[node name="Tier2SpellContainer" type="GridContainer" parent="LayoutRoot/MainRow/LeftPanel"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+theme_override_constants/h_separation = 8
+columns = 2
+
+[node name="PanelScroll" type="ScrollContainer" parent="LayoutRoot/MainRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RightPanel" type="GridContainer" parent="LayoutRoot/MainRow/PanelScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+columns = 2
+
+[node name="PlayerLoadoutPanel" parent="LayoutRoot/MainRow/PanelScroll/RightPanel" instance=ExtResource("4_kxik3")]
+layout_mode = 2
+
+[node name="PlayerLoadoutPanel2" parent="LayoutRoot/MainRow/PanelScroll/RightPanel" instance=ExtResource("4_kxik3")]
+layout_mode = 2
+
+[node name="PlayerLoadoutPanel3" parent="LayoutRoot/MainRow/PanelScroll/RightPanel" instance=ExtResource("4_kxik3")]
+layout_mode = 2
+
+[node name="PlayerLoadoutPanel4" parent="LayoutRoot/MainRow/PanelScroll/RightPanel" instance=ExtResource("4_kxik3")]
+layout_mode = 2

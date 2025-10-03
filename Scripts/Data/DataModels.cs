@@ -1,31 +1,28 @@
-// res://Scripts/Data/DataModels.cs
-#nullable enable
-using System.Collections.Generic;
+// Scripts/Data/DataModels.cs
+using System.Text.Json.Serialization;
 
 namespace DiceArena.Data
 {
-	public class ClassDef
+	// Corresponds to an entry in classes.json
+	public class ClassData
 	{
+		[JsonPropertyName("id")]
 		public string Id { get; set; } = "";
+
+		[JsonPropertyName("name")]
 		public string Name { get; set; } = "";
-		public string Trait { get; set; } = "";
-		/// <summary>Display text of the Class Ability (multi-line allowed).</summary>
-		public string HeroAction { get; set; } = "";
 	}
 
-	public class SpellDef
+	// Corresponds to an entry in spells.json
+	public class SpellData
 	{
-		/// <summary>Stable id, e.g. "attack", "heal", "fireball".</summary>
+		[JsonPropertyName("id")]
 		public string Id { get; set; } = "";
-		/// <summary>UI display name, e.g. "Attack", "Heal", "Fireball".</summary>
+
+		[JsonPropertyName("name")]
 		public string Name { get; set; } = "";
-		/// <summary>1, 2, or 3.</summary>
+		
+		[JsonPropertyName("tier")]
 		public int Tier { get; set; }
-		/// <summary>Category/kind: "attack","sweep","heal","armor","fireball","poison","bomb","concentration"…</summary>
-		public string Kind { get; set; } = "";
-		/// <summary>Optional tag list, e.g. ["defensive"] for padding logic.</summary>
-		public List<string> Tags { get; set; } = new();
-		/// <summary>Optional short rules text for UI.</summary>
-		public string? Text { get; set; }
 	}
 }
