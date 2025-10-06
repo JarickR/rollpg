@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://bxlmfrb7bijip"]
+
+[ext_resource type="Texture2D" uid="uid://d3wp7aiqcgvom" path="res://Content/Icons/Classes/Barbarian.png" id="1_u2uub"]
+[ext_resource type="Script" uid="uid://djl1c0crm58bk" path="res://Scripts/Godot/IconTile.cs" id="2_jinp2"]
+
+[node name="IconTile" type="Button"]
+custom_minimum_size = Vector2(64, 64)
+size_flags_horizontal = 3
+size_flags_vertical = 3
+toggle_mode = true
+icon = ExtResource("1_u2uub")
+icon_alignment = 1
+expand_icon = true
+script = ExtResource("2_jinp2")

@@ -1,6 +1,39 @@
-[gd_scene load_steps=2 format=3 uid="uid://da4ara70hfel6"]
+[gd_scene load_steps=35 format=3 uid="uid://da4ara70hfel6"]
 
 [ext_resource type="Script" uid="uid://66rg4inhmoip" path="res://Scripts/Godot/PlayerLoadoutPanel.cs" id="1_cno7r"]
+[ext_resource type="PackedScene" uid="uid://bxlmfrb7bijip" path="res://Scenes/IconTile.tscn" id="2_6bpwx"]
+[ext_resource type="Texture2D" uid="uid://c7kwmfuyslwwu" path="res://Content/Icons/Classes/Bard.png" id="3_yqggp"]
+[ext_resource type="Texture2D" uid="uid://1yegckio8l8a" path="res://Content/Icons/Classes/Judge.png" id="4_ni87e"]
+[ext_resource type="Texture2D" uid="uid://da26kw7mr4e1b" path="res://Content/Icons/Classes/King.png" id="5_dpc8d"]
+[ext_resource type="Texture2D" uid="uid://dfinof0a5qxtc" path="res://Content/Icons/Classes/Lich.png" id="6_7pjq3"]
+[ext_resource type="Texture2D" uid="uid://d2pjl284xfb1c" path="res://Content/Icons/Classes/Paladin.png" id="7_2ee07"]
+[ext_resource type="Texture2D" uid="uid://bpmm8ly2ig4yw" path="res://Content/Icons/Classes/Tank.png" id="8_bgpb8"]
+[ext_resource type="Texture2D" uid="uid://cl4x7f75qgxqs" path="res://Content/Icons/Classes/Thief.png" id="9_oi5sx"]
+[ext_resource type="Texture2D" uid="uid://vr1hwy03b8xu" path="res://Content/Icons/Classes/Vampire.png" id="10_ed1ym"]
+[ext_resource type="Texture2D" uid="uid://bxmiub4tg2wv3" path="res://Content/Icons/Classes/Warden.png" id="11_pov4x"]
+[ext_resource type="Texture2D" uid="uid://chbnd237iok3y" path="res://Content/Icons/Spells/attack.png" id="12_t4r0e"]
+[ext_resource type="Texture2D" uid="uid://cqjg1hqv55fra" path="res://Content/Icons/Spells/chainlightning.png" id="13_240hx"]
+[ext_resource type="Texture2D" uid="uid://dhfmd7h1h1724" path="res://Content/Icons/Spells/cragshot.png" id="14_tfma4"]
+[ext_resource type="Texture2D" uid="uid://c5fwxurmocaqj" path="res://Content/Icons/Spells/fireball.png" id="15_p5kg3"]
+[ext_resource type="Texture2D" uid="uid://cv02r1bpyxekx" path="res://Content/Icons/Spells/freeze.png" id="16_f0x5b"]
+[ext_resource type="Texture2D" uid="uid://bbdytl1tvdsgc" path="res://Content/Icons/Spells/heal.png" id="17_8px8b"]
+[ext_resource type="Texture2D" uid="uid://c2gsi0s11374y" path="res://Content/Icons/Spells/shield.png" id="18_u4o7h"]
+[ext_resource type="Texture2D" uid="uid://c8slhs7sky7b4" path="res://Content/Icons/Spells/spikedshield.png" id="19_rg1nv"]
+[ext_resource type="Texture2D" uid="uid://crcnfcd8y340t" path="res://Content/Icons/Spells/stab.png" id="20_n35mf"]
+[ext_resource type="Texture2D" uid="uid://cdy8rl32lcmyq" path="res://Content/Icons/Spells/sweep.png" id="21_6rmng"]
+[ext_resource type="Texture2D" uid="uid://cjq524pplrjn5" path="res://Content/Icons/Spells/attackplus.png" id="22_i736g"]
+[ext_resource type="Texture2D" uid="uid://biw73qnbtuskg" path="res://Content/Icons/Spells/bomb.png" id="23_nsr3u"]
+[ext_resource type="Texture2D" uid="uid://qxdpyr5nsu2i" path="res://Content/Icons/Spells/chainlightningplus.png" id="24_kgmka"]
+[ext_resource type="Texture2D" uid="uid://bcqcp4dk35rsn" path="res://Content/Icons/Spells/concentration.png" id="25_joihk"]
+[ext_resource type="Texture2D" uid="uid://boyftjbmhphd5" path="res://Content/Icons/Spells/cragshotplus.png" id="26_e8lu3"]
+[ext_resource type="Texture2D" uid="uid://bfx7ovfns8bjd" path="res://Content/Icons/Spells/fireballplus.png" id="27_eeofu"]
+[ext_resource type="Texture2D" uid="uid://c34lu2l31yaoq" path="res://Content/Icons/Spells/freezeplus.png" id="28_2qllh"]
+[ext_resource type="Texture2D" uid="uid://db5wuws2w5tjm" path="res://Content/Icons/Spells/healplus.png" id="29_ui80t"]
+[ext_resource type="Texture2D" uid="uid://hx34ums3yilg" path="res://Content/Icons/Spells/poison.png" id="30_jmace"]
+[ext_resource type="Texture2D" uid="uid://cuxja21c7w510" path="res://Content/Icons/Spells/shieldplus.png" id="31_bm35f"]
+[ext_resource type="Texture2D" uid="uid://blkqv5nr2ipwh" path="res://Content/Icons/Spells/spikedshieldplus.png" id="32_khmf3"]
+[ext_resource type="Texture2D" uid="uid://crshjba88vk50" path="res://Content/Icons/Spells/stabplus.png" id="33_ribid"]
+[ext_resource type="Texture2D" uid="uid://ciiu1linmp51j" path="res://Content/Icons/Spells/sweepplus.png" id="34_kr7s8"]
 
 [node name="PlayerLoadoutPanel" type="PanelContainer"]
 custom_minimum_size = Vector2(0, 420)
@@ -34,32 +67,330 @@ layout_mode = 2
 [node name="ClassLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Class:"
+clip_text = true
 
 [node name="ClassSelectionContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 96)
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 4
-columns = 5
+size_flags_vertical = 3
+columns = 10
+
+[node name="Barbarian" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Barbarian"
+text = "?"
+flat = true
+Pool = 1
+Id = "Barbarian"
+Verbose = true
+
+[node name="Bard" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Bard"
+text = "?"
+icon = ExtResource("3_yqggp")
+flat = true
+Pool = 1
+Id = "Bard"
+
+[node name="Judge" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Judge"
+text = "?"
+icon = ExtResource("4_ni87e")
+flat = true
+Pool = 1
+Id = "Judge"
+
+[node name="King" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "King"
+text = "?"
+icon = ExtResource("5_dpc8d")
+flat = true
+Pool = 1
+Id = "King"
+
+[node name="Lich" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Lich"
+text = "?"
+icon = ExtResource("6_7pjq3")
+flat = true
+Pool = 1
+Id = "Lich"
+
+[node name="Paladin" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Paladin"
+text = "?"
+icon = ExtResource("7_2ee07")
+flat = true
+Pool = 1
+Id = "Paladin"
+
+[node name="Tank" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Tank"
+text = "?"
+icon = ExtResource("8_bgpb8")
+flat = true
+Pool = 1
+Id = "Tank"
+
+[node name="Thief" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Thief"
+text = "?"
+icon = ExtResource("9_oi5sx")
+flat = true
+Pool = 1
+Id = "Thief"
+
+[node name="Vampire" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Vampire"
+text = "?"
+icon = ExtResource("10_ed1ym")
+flat = true
+Pool = 1
+Id = "Vampire"
+
+[node name="Warden" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "Warden"
+text = "?"
+icon = ExtResource("11_pov4x")
+flat = true
+Pool = 1
+Id = "Warden"
 
 [node name="Tier1SpellLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Tier 1 Spell (Pick 2):"
 
 [node name="Tier1SpellContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 96)
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 4
-columns = 3
+size_flags_vertical = 3
+columns = 10
+
+[node name="attack" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "attack"
+text = "?"
+icon = ExtResource("12_t4r0e")
+flat = true
+Pool = 2
+Id = "attack"
+
+[node name="chainlightning" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "chainlightning"
+text = "?"
+icon = ExtResource("13_240hx")
+flat = true
+Pool = 2
+Id = "chainlightning"
+
+[node name="cragshot" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "cragshot"
+text = "?"
+icon = ExtResource("14_tfma4")
+flat = true
+Pool = 2
+Id = "cragshot"
+
+[node name="fireball" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "fireball"
+text = "?"
+icon = ExtResource("15_p5kg3")
+flat = true
+Pool = 2
+Id = "fireball"
+
+[node name="freeze" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "freeze"
+text = "?"
+icon = ExtResource("16_f0x5b")
+flat = true
+Pool = 2
+Id = "freeze"
+
+[node name="heal" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "heal"
+text = "?"
+icon = ExtResource("17_8px8b")
+flat = true
+Pool = 2
+Id = "heal"
+
+[node name="shield" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "shield"
+text = "?"
+icon = ExtResource("18_u4o7h")
+flat = true
+Pool = 2
+Id = "shield"
+
+[node name="spikedshield" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "spikedshield"
+text = "?"
+icon = ExtResource("19_rg1nv")
+flat = true
+Pool = 2
+Id = "spikedshield"
+
+[node name="stab" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "stab"
+text = "?"
+icon = ExtResource("20_n35mf")
+flat = true
+Pool = 2
+Id = "stab"
+
+[node name="sweep" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "sweep"
+text = "?"
+icon = ExtResource("21_6rmng")
+flat = true
+Pool = 2
+Id = "sweep"
 
 [node name="Tier2SpellLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Tier 1 Spell (Pick 2):"
 
 [node name="Tier2SpellContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 96)
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 4
-columns = 2
+size_flags_vertical = 3
+columns = 10
+
+[node name="attackplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "attackplus"
+text = "?"
+icon = ExtResource("22_i736g")
+flat = true
+Pool = 3
+Id = "attackplus"
+
+[node name="bomb" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "bomb"
+text = "?"
+icon = ExtResource("23_nsr3u")
+flat = true
+Pool = 3
+Id = "bomb"
+
+[node name="chainlightningplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "chainlightningplus"
+text = "?"
+icon = ExtResource("24_kgmka")
+flat = true
+Pool = 3
+Id = "chainlightningplus"
+
+[node name="concentration" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "concentration"
+text = "?"
+icon = ExtResource("25_joihk")
+flat = true
+Pool = 3
+Id = "concentration"
+
+[node name="cragshotplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "cragshotplus"
+text = "?"
+icon = ExtResource("26_e8lu3")
+flat = true
+Pool = 3
+Id = "cragshotplus"
+
+[node name="fireballplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "fireballplus"
+text = "?"
+icon = ExtResource("27_eeofu")
+flat = true
+Pool = 3
+Id = "fireballplus"
+
+[node name="freezeplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "freezeplus"
+text = "?"
+icon = ExtResource("28_2qllh")
+flat = true
+Pool = 3
+Id = "freezeplus"
+
+[node name="healplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "healplus"
+text = "?"
+icon = ExtResource("29_ui80t")
+flat = true
+Pool = 3
+Id = "healplus"
+
+[node name="poison" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "poison"
+text = "?"
+icon = ExtResource("30_jmace")
+flat = true
+Pool = 3
+Id = "poison"
+
+[node name="shieldplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "shieldplus"
+text = "?"
+icon = ExtResource("31_bm35f")
+flat = true
+Pool = 3
+Id = "shieldplus"
+
+[node name="spikedshieldplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "spikedshieldplus"
+text = "?"
+icon = ExtResource("32_khmf3")
+flat = true
+Pool = 3
+Id = "spikedshieldplus"
+
+[node name="stabplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "stabplus"
+text = "?"
+icon = ExtResource("33_ribid")
+flat = true
+Pool = 3
+Id = "stabplus"
+
+[node name="sweepplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
+layout_mode = 2
+tooltip_text = "sweepplus"
+text = "?"
+icon = ExtResource("34_kr7s8")
+flat = true
+Pool = 3
+Id = "sweepplus"

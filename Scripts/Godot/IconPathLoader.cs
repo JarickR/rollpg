@@ -1,42 +1,41 @@
-// Scripts/Godot/IconPathLoader.cs
 using Godot;
 
 namespace DiceArena.Godot
 {
 	/// <summary>
-	/// Central place for loadout icon paths and convenience loaders.
+	/// Centralized icon path + tiny transparent texture helper.
+	/// Keep a single copy of this class in the project.
 	/// </summary>
 	public static class IconPathLoader
 	{
 		private const string ClassesDir = "res://Content/Icons/Classes";
 		private const string SpellsDir  = "res://Content/Icons/Spells";
 
-		// --- Paths -------------------------------------------------------------
+		public static string LoadClassPath(string id) => $"{ClassesDir}/{id}.png";
+		public static string LoadSpellPath(string id) => $"{SpellsDir}/{id}.png";
 
-		public static string LoadClassPath(string classId) => $"{ClassesDir}/{classId}.png";
-		public static string LoadSpellPath(string spellId) => $"{SpellsDir}/{spellId}.png";
-
-		// --- Convenience texture loaders (optional) ---------------------------
-
-		public static Texture2D LoadClassTexture(string classId)
-		{
-			var path = LoadClassPath(classId);
-			return GD.Load<Texture2D>(path);
-		}
-
-		public static Texture2D LoadSpellTexture(string spellId)
-		{
-			var path = LoadSpellPath(spellId);
-			return GD.Load<Texture2D>(path);
-		}
-
-		/// <summary>1×1 fully transparent texture (useful as a safe fallback).</summary>
+		/// <summary>1x1 transparent texture for safe fallbacks.</summary>
 		public static Texture2D Transparent1x1()
 		{
-			var img = new Image();
-			img.CreateEmpty(1, 1, false, Image.Format.Rgba8);
-			img.Fill(Colors.Transparent);
+			var img = Image.CreateEmpty(1, 1, false, Image.Format.Rgba8);
+			img.Fill(new Color(0, 0, 0, 0));
 			return ImageTexture.CreateFromImage(img);
+		}
+
+		/// <summary>Load a Texture2D if it exists, else return transparent.</summary>
+		public static Texture2D TryLoadTexture(string path)
+		{
+			if (string.IsNullOrEmpty(path))
+				return Transparent1x1();
+
+			if (ResourceLoader.Exists(path))
+			{
+				var tex = GD.Load<Texture2D>(path);
+				return tex ?? Transparent1x1();
+			}
+
+			GD.PushWarning($"[IconPathLoader] Missing icon: {path}");
+			return Transparent1x1();
 		}
 	}
 }
