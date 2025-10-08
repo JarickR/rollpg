@@ -1,41 +1,50 @@
+// Scripts/Godot/IconPathLoader.cs
 using Godot;
 
 namespace DiceArena.Godot
 {
 	/// <summary>
-	/// Centralized icon path + tiny transparent texture helper.
-	/// Keep a single copy of this class in the project.
+	/// Resolves resource paths for class/spell icons from the Content folder.
+	/// Uses the single canonical IconPool defined in IconPool.cs.
 	/// </summary>
 	public static class IconPathLoader
 	{
-		private const string ClassesDir = "res://Content/Icons/Classes";
-		private const string SpellsDir  = "res://Content/Icons/Spells";
-
-		public static string LoadClassPath(string id) => $"{ClassesDir}/{id}.png";
-		public static string LoadSpellPath(string id) => $"{SpellsDir}/{id}.png";
-
-		/// <summary>1x1 transparent texture for safe fallbacks.</summary>
-		public static Texture2D Transparent1x1()
+		/// <summary>
+		/// Returns a Godot resource path for an icon, or empty string if not found.
+		/// </summary>
+		public static string LoadPath(IconPool pool, string id)
 		{
-			var img = Image.CreateEmpty(1, 1, false, Image.Format.Rgba8);
-			img.Fill(new Color(0, 0, 0, 0));
-			return ImageTexture.CreateFromImage(img);
-		}
+			if (string.IsNullOrWhiteSpace(id))
+				return string.Empty;
 
-		/// <summary>Load a Texture2D if it exists, else return transparent.</summary>
-		public static Texture2D TryLoadTexture(string path)
-		{
-			if (string.IsNullOrEmpty(path))
-				return Transparent1x1();
-
-			if (ResourceLoader.Exists(path))
+			// You unified spells into one folder; classes in their own.
+			string baseDir = pool switch
 			{
-				var tex = GD.Load<Texture2D>(path);
-				return tex ?? Transparent1x1();
+				IconPool.Class      => "res://Content/Icons/Classes",
+				IconPool.Tier1Spell => "res://Content/Icons/Spells",
+				IconPool.Tier2Spell => "res://Content/Icons/Spells",
+				IconPool.Tier3Spell => "res://Content/Icons/Spells",
+				_ => "res://Content/Icons/Spells"
+			};
+
+			string[] tryExts = { ".png", ".webp" };
+
+			foreach (var ext in tryExts)
+			{
+				var candidate = $"{baseDir}/{id}{ext}";
+				if (ResourceLoader.Exists(candidate))
+					return candidate;
 			}
 
-			GD.PushWarning($"[IconPathLoader] Missing icon: {path}");
-			return Transparent1x1();
+			// Fallback: check raw file presence explicitly (fully qualify FileAccess)
+			foreach (var ext in tryExts)
+			{
+				var candidate = $"{baseDir}/{id}{ext}";
+				if (global::Godot.FileAccess.FileExists(candidate))
+					return candidate;
+			}
+
+			return string.Empty;
 		}
 	}
 }

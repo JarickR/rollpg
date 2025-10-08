@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3 uid="uid://da4ara70hfel6"]
+[gd_scene load_steps=36 format=3 uid="uid://da4ara70hfel6"]
 
 [ext_resource type="Script" uid="uid://66rg4inhmoip" path="res://Scripts/Godot/PlayerLoadoutPanel.cs" id="1_cno7r"]
 [ext_resource type="PackedScene" uid="uid://bxlmfrb7bijip" path="res://Scenes/IconTile.tscn" id="2_6bpwx"]
@@ -34,9 +34,9 @@
 [ext_resource type="Texture2D" uid="uid://blkqv5nr2ipwh" path="res://Content/Icons/Spells/spikedshieldplus.png" id="32_khmf3"]
 [ext_resource type="Texture2D" uid="uid://crshjba88vk50" path="res://Content/Icons/Spells/stabplus.png" id="33_ribid"]
 [ext_resource type="Texture2D" uid="uid://ciiu1linmp51j" path="res://Content/Icons/Spells/sweepplus.png" id="34_kr7s8"]
+[ext_resource type="Script" uid="uid://djl1c0crm58bk" path="res://Scripts/Godot/IconTile.cs" id="35_yqggp"]
 
 [node name="PlayerLoadoutPanel" type="PanelContainer"]
-custom_minimum_size = Vector2(0, 420)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -48,6 +48,8 @@ script = ExtResource("1_cno7r")
 ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
 Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
 Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
+LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
+Tier2OptionCount = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -74,323 +76,280 @@ custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-columns = 10
+columns = 5
 
 [node name="Barbarian" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Barbarian"
-text = "?"
 flat = true
-Pool = 1
-Id = "Barbarian"
-Verbose = true
 
 [node name="Bard" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Bard"
-text = "?"
 icon = ExtResource("3_yqggp")
 flat = true
-Pool = 1
-Id = "Bard"
 
 [node name="Judge" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Judge"
-text = "?"
 icon = ExtResource("4_ni87e")
 flat = true
-Pool = 1
-Id = "Judge"
 
 [node name="King" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "King"
-text = "?"
 icon = ExtResource("5_dpc8d")
 flat = true
-Pool = 1
-Id = "King"
 
 [node name="Lich" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Lich"
-text = "?"
 icon = ExtResource("6_7pjq3")
 flat = true
-Pool = 1
-Id = "Lich"
 
 [node name="Paladin" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Paladin"
-text = "?"
 icon = ExtResource("7_2ee07")
 flat = true
-Pool = 1
-Id = "Paladin"
 
 [node name="Tank" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Tank"
-text = "?"
 icon = ExtResource("8_bgpb8")
 flat = true
-Pool = 1
-Id = "Tank"
 
 [node name="Thief" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Thief"
-text = "?"
 icon = ExtResource("9_oi5sx")
 flat = true
-Pool = 1
-Id = "Thief"
 
 [node name="Vampire" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Vampire"
-text = "?"
 icon = ExtResource("10_ed1ym")
 flat = true
-Pool = 1
-Id = "Vampire"
 
 [node name="Warden" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "Warden"
-text = "?"
 icon = ExtResource("11_pov4x")
 flat = true
-Pool = 1
-Id = "Warden"
 
 [node name="Tier1SpellLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "Tier 1 Spell (Pick 2):"
+text = "Tier 1 Spell (Max 2):"
 
 [node name="Tier1SpellContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-columns = 10
+columns = 3
 
 [node name="attack" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "attack"
-text = "?"
 icon = ExtResource("12_t4r0e")
 flat = true
-Pool = 2
-Id = "attack"
 
 [node name="chainlightning" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "chainlightning"
-text = "?"
 icon = ExtResource("13_240hx")
 flat = true
-Pool = 2
-Id = "chainlightning"
 
 [node name="cragshot" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "cragshot"
-text = "?"
 icon = ExtResource("14_tfma4")
 flat = true
-Pool = 2
-Id = "cragshot"
 
 [node name="fireball" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "fireball"
-text = "?"
 icon = ExtResource("15_p5kg3")
 flat = true
-Pool = 2
-Id = "fireball"
 
 [node name="freeze" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "freeze"
-text = "?"
 icon = ExtResource("16_f0x5b")
 flat = true
-Pool = 2
-Id = "freeze"
 
 [node name="heal" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "heal"
-text = "?"
 icon = ExtResource("17_8px8b")
 flat = true
-Pool = 2
-Id = "heal"
 
 [node name="shield" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "shield"
-text = "?"
 icon = ExtResource("18_u4o7h")
 flat = true
-Pool = 2
-Id = "shield"
 
 [node name="spikedshield" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "spikedshield"
-text = "?"
 icon = ExtResource("19_rg1nv")
 flat = true
-Pool = 2
-Id = "spikedshield"
 
 [node name="stab" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "stab"
-text = "?"
 icon = ExtResource("20_n35mf")
 flat = true
-Pool = 2
-Id = "stab"
 
 [node name="sweep" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "sweep"
-text = "?"
 icon = ExtResource("21_6rmng")
 flat = true
-Pool = 2
-Id = "sweep"
 
 [node name="Tier2SpellLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "Tier 1 Spell (Pick 2):"
+text = "Tier 2 Spell (Max 1):"
 
 [node name="Tier2SpellContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-columns = 10
+columns = 2
 
 [node name="attackplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "attackplus"
-text = "?"
 icon = ExtResource("22_i736g")
 flat = true
-Pool = 3
-Id = "attackplus"
 
 [node name="bomb" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "bomb"
-text = "?"
 icon = ExtResource("23_nsr3u")
 flat = true
-Pool = 3
-Id = "bomb"
 
 [node name="chainlightningplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "chainlightningplus"
-text = "?"
 icon = ExtResource("24_kgmka")
 flat = true
-Pool = 3
-Id = "chainlightningplus"
 
 [node name="concentration" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "concentration"
-text = "?"
 icon = ExtResource("25_joihk")
 flat = true
-Pool = 3
-Id = "concentration"
 
 [node name="cragshotplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "cragshotplus"
-text = "?"
 icon = ExtResource("26_e8lu3")
 flat = true
-Pool = 3
-Id = "cragshotplus"
 
 [node name="fireballplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "fireballplus"
-text = "?"
 icon = ExtResource("27_eeofu")
 flat = true
-Pool = 3
-Id = "fireballplus"
 
 [node name="freezeplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "freezeplus"
-text = "?"
 icon = ExtResource("28_2qllh")
 flat = true
-Pool = 3
-Id = "freezeplus"
 
 [node name="healplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "healplus"
-text = "?"
 icon = ExtResource("29_ui80t")
 flat = true
-Pool = 3
-Id = "healplus"
 
 [node name="poison" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "poison"
-text = "?"
 icon = ExtResource("30_jmace")
 flat = true
-Pool = 3
-Id = "poison"
 
 [node name="shieldplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "shieldplus"
-text = "?"
 icon = ExtResource("31_bm35f")
 flat = true
-Pool = 3
-Id = "shieldplus"
 
 [node name="spikedshieldplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "spikedshieldplus"
-text = "?"
 icon = ExtResource("32_khmf3")
 flat = true
-Pool = 3
-Id = "spikedshieldplus"
 
 [node name="stabplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "stabplus"
-text = "?"
 icon = ExtResource("33_ribid")
 flat = true
-Pool = 3
-Id = "stabplus"
 
 [node name="sweepplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
 layout_mode = 2
 tooltip_text = "sweepplus"
-text = "?"
 icon = ExtResource("34_kr7s8")
 flat = true
-Pool = 3
-Id = "sweepplus"
+
+[node name="LoadoutLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Loadout:"
+
+[node name="LoadoutContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="L0" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+disabled = true
+toggle_mode = true
+flat = true
+script = ExtResource("35_yqggp")
+
+[node name="L1" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+disabled = true
+toggle_mode = true
+flat = true
+script = ExtResource("35_yqggp")
+
+[node name="L2" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+disabled = true
+toggle_mode = true
+flat = true
+script = ExtResource("35_yqggp")
+
+[node name="L3" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+disabled = true
+toggle_mode = true
+flat = true
+script = ExtResource("35_yqggp")
+
+[node name="L4" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+disabled = true
+toggle_mode = true
+flat = true
+script = ExtResource("35_yqggp")
+
+[node name="L5" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+disabled = true
+toggle_mode = true
+flat = true
+script = ExtResource("35_yqggp")

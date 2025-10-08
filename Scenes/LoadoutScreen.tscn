@@ -13,7 +13,7 @@ grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_rgomp")
-MemberCardsContainerPath = NodePath("LayoutRoot/MainRow/PanelScroll/RightPanel")
+MemberCardsContainerPath = NodePath("LayoutRoot/MainRow/RightPanel")
 
 [node name="LayoutRoot" type="VBoxContainer" parent="."]
 layout_mode = 0
@@ -96,25 +96,37 @@ layout_mode = 2
 theme_override_constants/h_separation = 8
 columns = 2
 
-[node name="PanelScroll" type="ScrollContainer" parent="LayoutRoot/MainRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="RightPanel" type="GridContainer" parent="LayoutRoot/MainRow/PanelScroll"]
+[node name="RightPanel" type="GridContainer" parent="LayoutRoot/MainRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 2
 
-[node name="PlayerLoadoutPanel" parent="LayoutRoot/MainRow/PanelScroll/RightPanel" instance=ExtResource("4_kxik3")]
+[node name="PlayerLoadoutPanel" parent="LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
 layout_mode = 2
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
 
-[node name="PlayerLoadoutPanel2" parent="LayoutRoot/MainRow/PanelScroll/RightPanel" instance=ExtResource("4_kxik3")]
+[node name="PlayerLoadoutPanel2" parent="LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
 layout_mode = 2
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
 
-[node name="PlayerLoadoutPanel3" parent="LayoutRoot/MainRow/PanelScroll/RightPanel" instance=ExtResource("4_kxik3")]
+[node name="PlayerLoadoutPanel3" parent="LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
 layout_mode = 2
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
 
-[node name="PlayerLoadoutPanel4" parent="LayoutRoot/MainRow/PanelScroll/RightPanel" instance=ExtResource("4_kxik3")]
+[node name="PlayerLoadoutPanel4" parent="LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
 layout_mode = 2
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
+
+[editable path="LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]
+[editable path="LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel2"]
+[editable path="LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel3"]
+[editable path="LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel4"]

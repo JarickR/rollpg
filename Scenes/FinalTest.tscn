@@ -1,6 +1,53 @@
 [gd_scene load_steps=2 format=3 uid="uid://m8ltbltvannk"]
 
-[ext_resource type="Script" uid="uid://2qi7rp681qa1" path="res://Scenes/FinalTest.cs" id="1_b5rwv"]
+[sub_resource type="CSharpScript" id="CSharpScript_no0m7"]
+script/source = "using Godot;
+
+public partial class FinalTest : Control
+{
+	public override void _Ready()
+	{
+		GD.Print(\"--- Starting Final Test ---\");
+		var grid = GetNode<GridContainer>(\"MyGrid\");
+
+		if (grid == null)
+		{
+			GD.PushError(\"Final Test FAILED: Could not find TestGrid.\");
+			return;
+		}
+
+		var highlightStyle = new StyleBoxFlat
+		{
+			BgColor = new Color(Colors.Gold, 0.2f),
+			BorderColor = Colors.Gold,
+			BorderWidthTop = 4, BorderWidthBottom = 4, BorderWidthLeft = 4, BorderWidthRight = 4
+		};
+		
+		for (int i = 0; i < 4; i++)
+		{
+			var button = new Button
+			{
+				Text = $\"Button {i + 1}\",
+				CustomMinimumSize = new Vector2(150, 150)
+			};
+
+			var highlight = new Panel
+			{
+				MouseFilter = MouseFilterEnum.Ignore
+			};
+			// --- THIS IS THE FIX ---
+			highlight.SetAnchorsPreset(Control.LayoutPreset.FullRect);
+			
+			highlight.AddThemeStyleboxOverride(\"panel\", highlightStyle);
+			
+			button.AddChild(highlight);
+			grid.AddChild(button);
+		}
+		
+		GD.Print(\"--- Final Test Complete ---\");
+	}
+}
+"
 
 [node name="FinalTest" type="Control"]
 layout_mode = 3
@@ -9,7 +56,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_b5rwv")
+script = SubResource("CSharpScript_no0m7")
 
 [node name="MyGrid" type="GridContainer" parent="."]
 layout_mode = 0

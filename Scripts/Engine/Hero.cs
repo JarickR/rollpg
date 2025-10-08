@@ -1,21 +1,20 @@
-// res://Scripts/Engine/Hero.cs
 #nullable enable
 using System.Collections.Generic;
+using DiceArena.Data; // ✅ add this for ClassData / SpellData
 
 namespace DiceArena.Engine
 {
 	public enum DefenseType
 	{
 		None = 0,
-		Disrupt = 1,     // cancel next spell targeting you
-		Redirect = 2,    // next spell targeting you goes to another player
-		Delay = 3,       // next spell is delayed to start of your next turn
-		Counterspell = 4,// next spell: half damage to you and half back to caster (works vs AoE too)
-		Dodge = 5,       // physical attack 1–3 dodge, 4–6 fail
-		Smoke = 6        // next spell: 50% miss
+		Disrupt = 1,
+		Redirect = 2,
+		Delay = 3,
+		Counterspell = 4,
+		Dodge = 5,
+		Smoke = 6
 	}
 
-	/// <summary>Ephemeral defense applied by rolling the Defend face. Consumed by the next eligible incoming effect this turn.</summary>
 	public sealed class DefenseToken
 	{
 		public DefenseType Type { get; set; } = DefenseType.None;
@@ -31,7 +30,6 @@ namespace DiceArena.Engine
 		public string Name { get; set; } = "Hero";
 		public string ClassId { get; set; } = "thief";
 
-		// Alias expected by some UIs
 		public string ClassKey { get => ClassId; set => ClassId = value; }
 
 		// Stats
@@ -39,7 +37,6 @@ namespace DiceArena.Engine
 		public int Hp { get; set; } = 20;
 		public int Armor { get; set; } = 0;
 
-		// Alias expected by some UIs
 		public int CurrentHp { get => Hp; set => Hp = value; }
 
 		// Status stacks
@@ -47,13 +44,9 @@ namespace DiceArena.Engine
 		public int BombStacks { get; set; } = 0;
 		public int ConcentrationStacks { get; set; } = 0;
 
-		/// <summary>Damage reflected back to melee attackers (from Spiked Shield). Typically equals Armor gained by that spell.</summary>
 		public int SpikedThorns { get; set; } = 0;
-
-		/// <summary>One-turn defensive token, granted when rolling a Defend face.</summary>
 		public DefenseToken? Defense { get; set; }
 
-		// Always 4 slots — pad with blanks/Defend by loadout picker
 		public List<Spell> Loadout { get; set; } = new(4)
 		{
 			Spells.Blank(), Spells.Blank(), Spells.Blank(), Spells.Blank()
@@ -61,14 +54,12 @@ namespace DiceArena.Engine
 
 		public Hero() { }
 
-		// Minimal ctor used by some call sites
 		public Hero(string id, int maxHp = 20)
 		{
 			Id = id; Name = id; ClassId = "thief";
 			MaxHp = maxHp; Hp = maxHp;
 		}
 
-		// Main ctor
 		public Hero(string id, string name, string classId, int maxHp = 20, int armor = 0, IEnumerable<Spell>? loadout = null)
 		{
 			Id = id; Name = name; ClassId = classId;
@@ -86,17 +77,18 @@ namespace DiceArena.Engine
 			while (Loadout.Count < 4) Loadout.Add(Spells.Blank());
 		}
 
-		// Compatibility ctor so named args like hp: 20 don’t blow up
 		public Hero(string id, string name, string classId, int hp, int armor, bool usingHpNamedArg)
 		{
 			Id = id; Name = name; ClassId = classId;
 			MaxHp = hp; Hp = hp; Armor = armor;
-			Loadout = new List<Spell>(4) { Spells.Blank(), Spells.Blank(), Spells.Blank(), Spells.Blank() };
+			Loadout = new List<Spell>(4)
+			{
+				Spells.Blank(), Spells.Blank(), Spells.Blank(), Spells.Blank()
+			};
 		}
 
-		// Utilities
 		public void AddArmor(int amt) => Armor = System.Math.Max(0, Armor + System.Math.Max(0, amt));
-		public void Heal(int amt)      => Hp    = System.Math.Min(MaxHp, Hp + System.Math.Max(0, amt));
+		public void Heal(int amt) => Hp = System.Math.Min(MaxHp, Hp + System.Math.Max(0, amt));
 
 		public void Damage(int amt, bool bypassArmor)
 		{
@@ -105,15 +97,17 @@ namespace DiceArena.Engine
 			{
 				var blocked = System.Math.Min(Armor, amt);
 				Armor -= blocked;
-				amt   -= blocked;
+				amt -= blocked;
 			}
 			if (amt > 0) Hp = System.Math.Max(0, Hp - amt);
 		}
 
-		// Loadout helpers
 		public void ClearLoadoutToBlanks()
 		{
-			Loadout = new List<Spell>(4) { Spells.Blank(), Spells.Blank(), Spells.Blank(), Spells.Blank() };
+			Loadout = new List<Spell>(4)
+			{
+				Spells.Blank(), Spells.Blank(), Spells.Blank(), Spells.Blank()
+			};
 		}
 
 		public void SetSlot(int slot, Spell spell)
@@ -136,6 +130,11 @@ namespace DiceArena.Engine
 			}
 			while (Loadout.Count < 4) Loadout.Add(Spells.Blank());
 		}
+
+		// 🆕 Loadout metadata (for UI + LoadoutScreen)
+		public ClassData? Class { get; set; }
+		public SpellData? Tier1Spell { get; set; }
+		public SpellData? Tier2Spell { get; set; }
 
 		public override string ToString() => $"{Id} {Name} [{ClassId}] HP {Hp}/{MaxHp} AR {Armor}";
 	}

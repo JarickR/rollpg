@@ -1,48 +1,72 @@
+// Scripts/Godot/HeroCard.cs
 using Godot;
-using EnginePM = DiceArena.Engine.Core.PartyMember;
+using System;
+using DiceArena.Engine;
 
 namespace DiceArena.Godot
 {
-	/// <summary>Displays the hero portrait + two spell icons and a name label.</summary>
+	/// <summary>
+	/// Displays hero info, class icon, and equipped spells on a card UI element.
+	/// </summary>
 	public partial class HeroCard : Control
 	{
-		[Export] public NodePath ClassIconPath { get; set; } = default!;
-		[Export] public NodePath Tier1IconPath { get; set; } = default!;
-		[Export] public NodePath Tier2IconPath { get; set; } = default!;
-		[Export] public NodePath NameLabelPath { get; set; } = default!;
+		[Export] private TextureRect? ClassIconRect;
+		[Export] private TextureRect? Tier1SpellIconRect;
+		[Export] private TextureRect? Tier2SpellIconRect;
+		[Export] private Label? HeroNameLabel;
 
-		private TextureRect? _classIcon;
-		private TextureRect? _t1Icon;
-		private TextureRect? _t2Icon;
-		private Label?       _nameLbl;
-
-		private const int ICON_SIZE = 64; // keep aligned with your import size
+		private Hero? _hero;
 
 		public override void _Ready()
 		{
-			_classIcon = GetNodeOrNull<TextureRect>(ClassIconPath);
-			_t1Icon    = GetNodeOrNull<TextureRect>(Tier1IconPath);
-			_t2Icon    = GetNodeOrNull<TextureRect>(Tier2IconPath);
-			_nameLbl   = GetNodeOrNull<Label>(NameLabelPath);
+			if (HeroNameLabel != null)
+				HeroNameLabel.Text = string.Empty;
 		}
 
-		public void SetHero(EnginePM m)
+		/// <summary>
+		/// Updates the card’s displayed hero info and icons.
+		/// </summary>
+		public void SetHero(Hero hero)
 		{
-			if (_nameLbl != null)
-				_nameLbl.Text = m.ClassId;
+			_hero = hero;
+			UpdateCard();
+		}
 
-			// Class icon
-			if (_classIcon != null)
-				_classIcon.Texture = IconLibrary.GetClassTexture(m.ClassId, ICON_SIZE);
+		private void UpdateCard()
+		{
+			if (_hero == null)
+				return;
 
-			// Tier 1 (prefer A, fallback B)
-			string? t1 = !string.IsNullOrEmpty(m.Tier1A) ? m.Tier1A : m.Tier1B;
-			if (!string.IsNullOrEmpty(t1) && _t1Icon != null)
-				_t1Icon.Texture = IconLibrary.GetSpellTexture(t1, 1, ICON_SIZE);
+			// --- Hero name ---
+			if (HeroNameLabel != null)
+				HeroNameLabel.Text = _hero.Name ?? "Unnamed Hero";
 
-			// Tier 2
-			if (!string.IsNullOrEmpty(m.Tier2) && _t2Icon != null)
-				_t2Icon.Texture = IconLibrary.GetSpellTexture(m.Tier2, 2, ICON_SIZE);
+			// --- Class icon ---
+			if (ClassIconRect != null)
+			{
+				if (_hero.Class != null)
+					ClassIconRect.Texture = IconLibrary.GetClassTexture(_hero.Class.Id);
+				else
+					ClassIconRect.Texture = IconLibrary.Transparent1x1;
+			}
+
+			// --- Tier 1 Spell ---
+			if (Tier1SpellIconRect != null)
+			{
+				if (_hero.Tier1Spell != null)
+					Tier1SpellIconRect.Texture = IconLibrary.GetSpellTexture(_hero.Tier1Spell.Id, 1);
+				else
+					Tier1SpellIconRect.Texture = IconLibrary.Transparent1x1;
+			}
+
+			// --- Tier 2 Spell ---
+			if (Tier2SpellIconRect != null)
+			{
+				if (_hero.Tier2Spell != null)
+					Tier2SpellIconRect.Texture = IconLibrary.GetSpellTexture(_hero.Tier2Spell.Id, 2);
+				else
+					Tier2SpellIconRect.Texture = IconLibrary.Transparent1x1;
+			}
 		}
 	}
 }

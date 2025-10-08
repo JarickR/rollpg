@@ -1,88 +1,93 @@
+// Scripts/Godot/IconLibrary.cs
 using Godot;
-using System.Collections.Generic;
+using System;
 
-/// <summary>
-/// Global IconLibrary so legacy code that does `IconLibrary.*` compiles.
-/// Also exposes overloads with extra arguments to match older call sites.
-/// Looks for:
-///   res://Content/Icons/Classes/{classId}.png
-///   res://Content/Icons/Spells/{spellId}.png
-/// </summary>
-public static class IconLibrary
-{
-	private static readonly Dictionary<string, Texture2D> _cache = new();
-	private const string ClassesDir = "res://Content/Icons/Classes";
-	private const string SpellsDir  = "res://Content/Icons/Spells";
-
-	// -------- Transparent 1x1 ----------
-	private static Texture2D? _transparent;
-	public static Texture2D Transparent1x1
-	{
-		get
-		{
-			if (_transparent == null)
-			{
-				var img = Image.CreateEmpty(1, 1, false, Image.Format.Rgba8);
-				img.Fill(Colors.Transparent);
-				_transparent = ImageTexture.CreateFromImage(img);
-			}
-			return _transparent!;
-		}
-	}
-
-	// -------- Class textures -----------
-	public static Texture2D GetClassTexture(string classId)
-	{
-		if (string.IsNullOrWhiteSpace(classId)) return Transparent1x1;
-		var path = $"{ClassesDir}/{classId}.png";
-		return LoadTextureOrTransparent(path);
-	}
-
-	// Back-compat overloads (ignored extra args)
-	public static Texture2D GetClassTexture(string classId, object _ignored)
-		=> GetClassTexture(classId);
-
-	// -------- Spell textures -----------
-	public static Texture2D GetSpellTexture(string spellId)
-	{
-		if (string.IsNullOrWhiteSpace(spellId)) return Transparent1x1;
-		var path = $"{SpellsDir}/{spellId}.png";
-		return LoadTextureOrTransparent(path);
-	}
-
-	// Back-compat overloads (ignored extra args)
-	public static Texture2D GetSpellTexture(string spellId, object _a, object _b)
-		=> GetSpellTexture(spellId);
-
-	// -------- Helpers ------------------
-	private static Texture2D LoadTextureOrTransparent(string path)
-	{
-		if (_cache.TryGetValue(path, out var tex) && tex != null)
-			return tex;
-
-		var loaded = GD.Load<Texture2D>(path);
-		if (loaded != null)
-		{
-			_cache[path] = loaded;
-			return loaded;
-		}
-
-		GD.PushWarning($"[IconLibrary] Missing icon: {path}");
-		return Transparent1x1;
-	}
-}
-
-/// <summary>
-/// Namespaced facade so files that refer to DiceArena.Godot.IconLibrary also work.
-/// </summary>
 namespace DiceArena.Godot
 {
+	/// <summary>
+	/// Central icon cache for textures used in the UI (classes, spells, etc.).
+	/// Caches loaded textures and provides a 1×1 transparent fallback.
+	/// </summary>
 	public static class IconLibrary
 	{
-		public static Texture2D Transparent1x1 => global::IconLibrary.Transparent1x1;
-		public static Texture2D GetClassTexture(string classId) => global::IconLibrary.GetClassTexture(classId);
-		public static Texture2D GetClassTexture(string classId, object a) => global::IconLibrary.GetClassTexture(classId, a);
-		public static Texture2D GetSpellTexture(string spellId) => global::IconLibrary.GetSpellTexture(spellId);
-		public static Texture2D GetSpellTexture(string spellId, object a, object b) => global::IconLibrary.GetSpellTexture(spellId, a, b);
+		private static readonly System.Collections.Generic.Dictionary<string, Texture2D> _cache = new();
+		private static Texture2D? _transparent;
+
+		/// <summary>1×1 transparent texture fallback, lazily created.</summary>
+		public static Texture2D Transparent1x1
+		{
+			get
+			{
+				if (_transparent == null)
+				{
+					var img = Image.CreateEmpty(1, 1, false, Image.Format.Rgba8);
+					img.Fill(new Color(0, 0, 0, 0));
+					_transparent = ImageTexture.CreateFromImage(img);
+				}
+				return _transparent;
+			}
+		}
+
+		public static Texture2D GetClassTexture(string classId)
+		{
+			if (string.IsNullOrWhiteSpace(classId))
+				return Transparent1x1;
+
+			var key = $"class:{classId}";
+			if (_cache.TryGetValue(key, out var cached))
+				return cached;
+
+			var path = IconPathLoader.LoadPath(IconPool.Class, classId);
+			var tex = TryLoad(path) ?? Transparent1x1;
+			_cache[key] = tex;
+			return tex;
+		}
+
+		public static Texture2D GetSpellTexture(string spellId, int tier)
+		{
+			if (string.IsNullOrWhiteSpace(spellId))
+				return Transparent1x1;
+
+			var key = $"spell:{spellId}:{tier}";
+			if (_cache.TryGetValue(key, out var cached))
+				return cached;
+
+			var pool = tier switch
+			{
+				1 => IconPool.Tier1Spell,
+				2 => IconPool.Tier2Spell,
+				3 => IconPool.Tier3Spell,
+				_ => IconPool.Tier1Spell
+			};
+
+			var path = IconPathLoader.LoadPath(pool, spellId);
+			var tex = TryLoad(path) ?? Transparent1x1;
+			_cache[key] = tex;
+			return tex;
+		}
+
+		// -------------------- internals --------------------
+
+		private static Texture2D? TryLoad(string path)
+		{
+			if (string.IsNullOrWhiteSpace(path))
+				return null;
+
+			try
+			{
+				if (ResourceLoader.Exists(path))
+					return ResourceLoader.Load<Texture2D>(path);
+
+				// Fallback: check raw file presence explicitly (use fully qualified FileAccess)
+				if (global::Godot.FileAccess.FileExists(path))
+					return ResourceLoader.Load<Texture2D>(path);
+			}
+			catch (Exception ex)
+			{
+				GD.PushWarning($"[IconLibrary] Failed loading texture at {path}: {ex.Message}");
+			}
+
+			return null;
+		}
 	}
 }

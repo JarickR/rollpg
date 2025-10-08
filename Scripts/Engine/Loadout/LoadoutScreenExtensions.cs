@@ -1,55 +1,31 @@
-// Scripts/Engine/Loadout/LoadoutScreenExtensions.cs
+#nullable enable
 using Godot;
-using System.Collections.Generic;
-using System.Linq;
-using DiceArena.Godot;   // this is where your LoadoutScreen + PlayerLoadoutPanel live
-using DiceArena.Data;    // GameDataRegistry
 
 namespace DiceArena.Engine.Loadout
 {
+	/// <summary>
+	/// Legacy extension methods for LoadoutScreen.
+	/// We keep these as no-ops so older references compile cleanly.
+	/// </summary>
 	public static class LoadoutScreenExtensions
 	{
 		/// <summary>
-		/// Loads registry data and calls SetData(...) on each PlayerLoadoutPanel
-		/// under the configured MemberCardsContainerPath (or the whole screen if not set).
+		/// No-op shim. Your LoadoutScreen now has its own PopulateMemberPanels() instance method.
+		/// If any old code still calls the extension, this version prevents compile errors.
 		/// </summary>
-		public static void PopulateMemberPanels(this DiceArena.Godot.LoadoutScreen s)
+		public static void PopulateMemberPanels(this LoadoutScreen _)
 		{
-			// 1) Load data
-			GameDataRegistry.LoadAll();
-			var classes = GameDataRegistry.GetAllClasses().ToList();
-			var tier1   = GameDataRegistry.GetSpellsByTier(1).ToList();
-			var tier2   = GameDataRegistry.GetSpellsByTier(2).ToList();
-
-			// 2) Resolve the host
-			Node host = s;
-			if (!s.MemberCardsContainerPath.IsEmpty)
-			{
-				var n = s.GetNodeOrNull(s.MemberCardsContainerPath);
-				if (n != null) host = n;
-				else GD.PushWarning("[Loadout] MemberCardsContainerPath didn't resolve; scanning whole LoadoutScreen.");
-			}
-
-			// 3) Find panels
-			var panels = FindPanels(host).ToList();
-
-			// 4) Populate
-			foreach (var p in panels)
-				p.SetData(classes, tier1, tier2);
-
-			GD.Print($"[Loadout] Populated {panels.Count} panels.");
+			// Intentionally left blank.
+			// Use LoadoutScreen.PopulateMemberPanels() instance method instead.
 		}
 
-		private static IEnumerable<PlayerLoadoutPanel> FindPanels(Node root)
+		/// <summary>
+		/// (Optional) Legacy hook to “rebuild” panels that may exist in old code paths.
+		/// Safe no-op to satisfy references without affecting runtime behavior.
+		/// </summary>
+		public static void RebuildPanelsLegacy(this LoadoutScreen _)
 		{
-			foreach (var child in root.GetChildren())
-			{
-				if (child is PlayerLoadoutPanel p)
-					yield return p;
-
-				foreach (var nested in FindPanels(child))
-					yield return nested;
-			}
+			// No-op.
 		}
 	}
 }
