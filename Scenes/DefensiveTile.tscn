@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://coig18xlcwjcp"]
+
+[ext_resource type="Texture2D" uid="uid://cedfy1moklbi4" path="res://Content/Icons/DefensiveIcon.png" id="1_jwphl"]
+
+[node name="DefensiveTile" type="TextureRect"]
+custom_minimum_size = Vector2(64, 64)
+offset_right = 206.0
+offset_bottom = 72.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("1_jwphl")
+stretch_mode = 5

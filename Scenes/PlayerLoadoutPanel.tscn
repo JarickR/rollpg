@@ -45,11 +45,6 @@ grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_cno7r")
-ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
-Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
-Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
-LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
-Tier2OptionCount = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -63,7 +58,6 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="PlayerNameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
-visible = false
 layout_mode = 2
 
 [node name="ClassLabel" type="Label" parent="MarginContainer/VBoxContainer"]
@@ -304,11 +298,14 @@ text = "Loadout:"
 [node name="LoadoutContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
+size_flags_vertical = 4
 theme_override_constants/separation = 8
 
 [node name="L0" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 disabled = true
 toggle_mode = true
 flat = true
@@ -317,6 +314,8 @@ script = ExtResource("35_yqggp")
 [node name="L1" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 disabled = true
 toggle_mode = true
 flat = true
@@ -325,6 +324,8 @@ script = ExtResource("35_yqggp")
 [node name="L2" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 disabled = true
 toggle_mode = true
 flat = true
@@ -333,6 +334,8 @@ script = ExtResource("35_yqggp")
 [node name="L3" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 disabled = true
 toggle_mode = true
 flat = true
@@ -341,6 +344,8 @@ script = ExtResource("35_yqggp")
 [node name="L4" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 disabled = true
 toggle_mode = true
 flat = true
@@ -349,6 +354,8 @@ script = ExtResource("35_yqggp")
 [node name="L5" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 disabled = true
 toggle_mode = true
 flat = true

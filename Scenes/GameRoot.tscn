@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://dalkd4gr4dlrq"]
+[gd_scene load_steps=11 format=3 uid="uid://dalkd4gr4dlrq"]
 
 [ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1"]
 [ext_resource type="Script" uid="uid://cw3b8jlbg5fa4" path="res://Scripts/Godot/BattleLogPanel.cs" id="2"]
@@ -8,6 +8,8 @@
 [ext_resource type="Script" uid="uid://emvjb148wv62" path="res://Scripts/Godot/LoadoutToBattleBridge.cs" id="7_7vkth"]
 [ext_resource type="PackedScene" uid="uid://d4ewlmx3ncbfg" path="res://Scenes/MemberCard.tscn" id="7_o8ewf"]
 [ext_resource type="PackedScene" uid="uid://djwyy84baep1n" path="res://Scenes/LoadoutScreen.tscn" id="8_o8ewf"]
+[ext_resource type="PackedScene" uid="uid://yyf8aq04mcur" path="res://Scenes/UpgradeTile.tscn" id="9_58i56"]
+[ext_resource type="PackedScene" uid="uid://coig18xlcwjcp" path="res://Scenes/DefensiveTile.tscn" id="10_ppc7m"]
 
 [node name="GameRoot" type="Control"]
 z_index = 100
@@ -145,10 +147,47 @@ FinalizeButtonPath = NodePath("../LoadoutScreen/LayoutRoot/HeaderRow/FinalizeBtn
 
 [node name="LoadoutScreen" parent="." instance=ExtResource("8_o8ewf")]
 layout_mode = 1
-PartyButtonsContainerPath = NodePath("LayoutRoot/PartySizeButtonContainer")
 
 [node name="RightPanel" parent="LoadoutScreen/LayoutRoot/MainRow" index="1"]
 columns = 4
+
+[node name="PlayerLoadoutPanel" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="0"]
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
+LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
+UpgradeSlotScene = ExtResource("9_58i56")
+DefensiveSlotScene = ExtResource("10_ppc7m")
+
+[node name="PlayerNameLabel" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="0"]
+text = "Player 1"
+
+[node name="LoadoutContainer" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="8"]
+size_flags_vertical = 3
+
+[node name="PlayerLoadoutPanel2" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="1"]
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
+LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
+UpgradeSlotScene = ExtResource("9_58i56")
+DefensiveSlotScene = ExtResource("10_ppc7m")
+
+[node name="PlayerLoadoutPanel3" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="2"]
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
+LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
+UpgradeSlotScene = ExtResource("9_58i56")
+DefensiveSlotScene = ExtResource("10_ppc7m")
+
+[node name="PlayerLoadoutPanel4" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="3"]
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
+LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
+UpgradeSlotScene = ExtResource("9_58i56")
+DefensiveSlotScene = ExtResource("10_ppc7m")
 
 [editable path="LoadoutScreen"]
 [editable path="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]

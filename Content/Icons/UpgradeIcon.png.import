@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bjn66eyhkp7ku"
-path="res://.godot/imported/attackplusplus.png-c038f30a9fb0f4ae0ee909febbd0cd99.ctex"
+uid="uid://dswtic4py86sq"
+path="res://.godot/imported/UpgradeIcon.png-d4676debfd78b239a12292112e17dcfc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Spells/attackplusplus.png"
-dest_files=["res://.godot/imported/attackplusplus.png-c038f30a9fb0f4ae0ee909febbd0cd99.ctex"]
+source_file="res://Content/Icons/UpgradeIcon.png"
+dest_files=["res://.godot/imported/UpgradeIcon.png-d4676debfd78b239a12292112e17dcfc.ctex"]
 
 [params]
 

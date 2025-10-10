@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bjn66eyhkp7ku"
-path="res://.godot/imported/attackplusplus.png-c038f30a9fb0f4ae0ee909febbd0cd99.ctex"
+uid="uid://b8ahynhj4s6p"
+path="res://.godot/imported/BleedIcon.png-c5b627c59d59c57e4ea7b2703fec2f52.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Content/Icons/Spells/attackplusplus.png"
-dest_files=["res://.godot/imported/attackplusplus.png-c038f30a9fb0f4ae0ee909febbd0cd99.ctex"]
+source_file="res://Content/Icons/BleedIcon.png"
+dest_files=["res://.godot/imported/BleedIcon.png-c5b627c59d59c57e4ea7b2703fec2f52.ctex"]
 
 [params]
 

@@ -1,74 +1,34 @@
-// Scripts/Godot/IconTile.cs
-#nullable enable
 using Godot;
 
 namespace DiceArena.Godot
 {
 	/// <summary>
-	/// Small clickable icon button used in the loadout UI.
-	/// Stores which pool it belongs to and the selected id so other scripts
-	/// (like PlayerLoadoutPanel) can read or assign Pool/Id.
+	/// Small wrapper for the icon buttons we place in the panel.
+	/// Gives us Id/Pool and a reliable way to read the displayed texture.
 	/// </summary>
 	public partial class IconTile : Button
 	{
-		// Keep the enum NESTED so external code can reference IconTile.IconPool
-		public enum IconPool { None = 0, Class = 1, Tier1Spell = 2, Tier2Spell = 3 }
+		public enum Pool { Class, Tier1, Tier2 }
 
-		/// <summary>The logical pool this tile represents (class / tier1 / tier2).</summary>
-		public IconPool Pool { get; set; } = IconPool.None;
+		/// <summary> Logical identifier for this tile (usually node name / spell id). </summary>
+		public string Id { get; set; } = "";
 
-		/// <summary>The id of the class or spell currently shown on this tile.</summary>
-		public string Id { get; set; } = string.Empty;
+		/// <summary> Which group (class / tier1 / tier2) this tile belongs to. </summary>
+		public Pool BelongsTo { get; set; } = Pool.Class;
 
-		/// <summary>Apply an icon to this tile and remember its identity.</summary>
-		public void Apply(IconPool pool, string id, string? tooltip = null)
+		/// <summary>
+		/// Texture currently shown for this tile:
+		/// - Prefer the Button's Icon when present
+		/// - Fallback to a child TextureRect named "TextureRect", if it exists
+		/// </summary>
+		public Texture2D? IconTexture
 		{
-			Pool = pool;
-			Id   = id ?? string.Empty;
-
-			Texture2D tex = IconLibrary.Transparent1x1;
-
-			switch (pool)
+			get
 			{
-				case IconPool.Class:
-					tex = IconLibrary.GetClassTexture(Id);
-					break;
-
-				case IconPool.Tier1Spell:
-					tex = IconLibrary.GetSpellTexture(Id, 1);
-					break;
-
-				case IconPool.Tier2Spell:
-					tex = IconLibrary.GetSpellTexture(Id, 2);
-					break;
-
-				default:
-					tex = IconLibrary.Transparent1x1;
-					break;
+				if (Icon is Texture2D t) return t;
+				var tr = GetNodeOrNull<TextureRect>("TextureRect");
+				return tr?.Texture as Texture2D;
 			}
-
-			// Button icon in Godot 4
-			Icon = tex;
-
-			// Helpful tooltip for hover (falls back to the id if not provided).
-			TooltipText = tooltip ?? Id;
-
-			// Make it nice and uniform; Button doesn't scale the icon automatically.
-			// This ensures a consistent clickable area that matches your grid cell.
-			CustomMinimumSize = new Vector2(64, 64);
-
-			// Make sure the button isn't "latched" visually when reused.
-			ButtonPressed = false;
-		}
-
-		/// <summary>Clear to a transparent icon and blank identity.</summary>
-		public void Clear()
-		{
-			Pool = IconPool.None;
-			Id   = string.Empty;
-			Icon = IconLibrary.Transparent1x1;
-			TooltipText = string.Empty;
-			ButtonPressed = false;
 		}
 	}
 }
