@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=3 uid="uid://dalkd4gr4dlrq"]
+[gd_scene load_steps=12 format=3 uid="uid://dalkd4gr4dlrq"]
 
 [ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1"]
 [ext_resource type="Script" uid="uid://cw3b8jlbg5fa4" path="res://Scripts/Godot/BattleLogPanel.cs" id="2"]
 [ext_resource type="Script" uid="uid://wcwow2wkvylk" path="res://Scripts/Godot/EnemyPanel.cs" id="2_p0hwe"]
 [ext_resource type="Script" uid="uid://ejg081jx0w6i" path="res://Scripts/Godot/BattleRoot.cs" id="2_vt32t"]
+[ext_resource type="Script" uid="uid://dxd8vxysi0643" path="res://Scripts/Godot/BattleHUD.cs" id="4_ppc7m"]
 [ext_resource type="Script" uid="uid://bsasdyrgmkamm" path="res://Scripts/Godot/HeroCard.cs" id="5_qwuey"]
 [ext_resource type="Script" uid="uid://emvjb148wv62" path="res://Scripts/Godot/LoadoutToBattleBridge.cs" id="7_7vkth"]
 [ext_resource type="PackedScene" uid="uid://d4ewlmx3ncbfg" path="res://Scenes/MemberCard.tscn" id="7_o8ewf"]
@@ -31,16 +32,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 script = ExtResource("2_vt32t")
 HeroCardScene = ExtResource("7_o8ewf")
 FriendlyRootPath = NodePath("HSplitContainer/LeftCol/HeroPanel")
-EnemyRootPath = NodePath("HSplitContainer/LeftCol/EnemyPanel")
-LogRootPath = NodePath("HSplitContainer/LeftCol/LogBox")
 
 [node name="HSplitContainer" type="HSplitContainer" parent="BattleRoot"]
 layout_mode = 0
 offset_right = 420.0
 offset_bottom = 236.0
+script = ExtResource("4_ppc7m")
 
 [node name="LeftCol" type="VBoxContainer" parent="BattleRoot/HSplitContainer"]
 layout_mode = 2
@@ -113,6 +114,7 @@ layout_mode = 2
 text = "d6"
 
 [node name="HeroCard" type="Control" parent="BattleRoot"]
+visible = false
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
@@ -141,9 +143,6 @@ offset_bottom = 23.0
 [node name="LoadoutToBattleBridge" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("7_7vkth")
-LoadoutScreenPath = NodePath("../LoadoutScreen")
-BattleRootPath = NodePath("../BattleRoot")
-FinalizeButtonPath = NodePath("../LoadoutScreen/LayoutRoot/HeaderRow/FinalizeBtn")
 
 [node name="LoadoutScreen" parent="." instance=ExtResource("8_o8ewf")]
 layout_mode = 1
@@ -188,6 +187,8 @@ Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellCont
 LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
 UpgradeSlotScene = ExtResource("9_58i56")
 DefensiveSlotScene = ExtResource("10_ppc7m")
+
+[connection signal="pressed" from="LoadoutScreen/LayoutRoot/HeaderRow/FinalizeBtn" to="LoadoutToBattleBridge" method="_on_finalize_btn_pressed"]
 
 [editable path="LoadoutScreen"]
 [editable path="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]

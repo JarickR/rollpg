@@ -1,52 +1,43 @@
+// res://Scripts/Godot/EnemyCard.cs
+#nullable enable
 using Godot;
-using DiceArena.Godot;  // gives access to IconLibrary
 
-namespace DiceArena.GodotUI
+namespace RollPG.GodotUI
 {
 	/// <summary>
-	/// Simple enemy card: title, small stat line, and an icon scaled to fit.
+	/// Optional small card for each enemy (top-left in your sketch).
 	/// </summary>
-	public partial class EnemyCard : VBoxContainer
+	public partial class EnemyCard : Control
 	{
-		private Label _title = default!;
-		private Label _stats = default!;
-		private TextureRect _icon = default!;
+		[Export] public NodePath NameLabelPath { get; set; } = "NameLabel";
+		[Export] public NodePath HpBarPath     { get; set; } = "HP";
+		[Export] public NodePath ArmBarPath    { get; set; } = "ARM";
+		[Export] public NodePath StatusRowPath { get; set; } = "StatusRow";
+
+		private Label _name = null!;
+		private ProgressBar _hp = null!;
+		private ProgressBar _arm = null!;
+		private HBoxContainer _status = null!;
 
 		public override void _Ready()
 		{
-			AddThemeConstantOverride("separation", 6);
-
-			_title = new Label { Text = "Enemy" };
-			AddChild(_title);
-
-			_icon = new TextureRect
-			{
-				StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered,
-				CustomMinimumSize = new Vector2(180, 180),
-				SizeFlagsHorizontal = SizeFlags.ShrinkCenter,
-				SizeFlagsVertical = SizeFlags.ShrinkCenter,
-			};
-			AddChild(_icon);
-
-			_stats = new Label { Text = "HP 0/0  ARM 0" };
-			AddChild(_stats);
+			_name   = GetNode<Label>(NameLabelPath);
+			_hp     = GetNode<ProgressBar>(HpBarPath);
+			_arm    = GetNode<ProgressBar>(ArmBarPath);
+			_status = GetNode<HBoxContainer>(StatusRowPath);
 		}
 
-		private void EnsureBuilt()
+		public void Show(string name, int hp, int maxHp, int armor, Texture2D[]? statusIcons)
 		{
-			// If nodes weren’t built (rare), build them.
-			if (_title == null || _icon == null || _stats == null)
-				_Ready();
-		}
+			_name.Text = name;
+			_hp.MaxValue = maxHp <= 0 ? 1 : maxHp;
+			_hp.Value = Mathf.Clamp(hp, 0, (int)_hp.MaxValue);
+			_arm.MaxValue = 20;
+			_arm.Value = Mathf.Clamp(armor, 0, 20);
 
-		/// <summary>Populate this card.</summary>
-		public void Bind(string name, int tier, int hp, int hpMax, int armor, Texture2D icon)
-		{
-			EnsureBuilt();
-
-			_title!.Text = $"{name} (T{tier})";
-			_icon!.Texture = icon ?? IconLibrary.Transparent1x1;
-			_stats!.Text = $"HP {hp}/{hpMax}  ARM {armor}";
+			foreach (var c in _status.GetChildren()) c.QueueFree();
+			if (statusIcons != null)
+				foreach (var t in statusIcons) _status.AddChild(new TextureRect { Texture = t, CustomMinimumSize = new Vector2(20,20) });
 		}
 	}
 }

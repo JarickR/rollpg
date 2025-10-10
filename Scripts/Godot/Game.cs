@@ -1,5 +1,6 @@
 // Scripts/Engine/Game.cs
 using Godot;
+using RollPG.GodotUI;
 
 namespace DiceArena.Godot
 {

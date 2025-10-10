@@ -1,4 +1,4 @@
-// File: Scripts/Godot/HeroPanel.cs
+// res://Scripts/Godot/HeroPanel.cs
 using DiceArena.Engine.Content;
 using G = global::Godot;
 
@@ -8,8 +8,8 @@ namespace DiceArena.Godot
 	public partial class HeroPanel : G.Control
 	{
 		// Paths to your data files (you can tweak these in the editor)
-		[G.Export] public string ClassesPath { get; set; } = "res://Data/classes.json";
-		[G.Export] public string SpellsPath  { get; set; } = "res://Data/spells.json";
+		[G.Export] public string ClassesPath { get; set; } = "res://Content/Data/classes.json";
+		[G.Export] public string SpellsPath  { get; set; } = "res://Content/Data/spells.json";
 
 		private ContentBundle _bundle = null!; // set in _Ready()
 

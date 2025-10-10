@@ -1,6 +1,6 @@
 [gd_scene load_steps=36 format=3 uid="uid://da4ara70hfel6"]
 
-[ext_resource type="Script" uid="uid://66rg4inhmoip" path="res://Scripts/Godot/PlayerLoadoutPanel.cs" id="1_cno7r"]
+[ext_resource type="Script" uid="uid://3dl30nqf2gdc" path="res://Scripts/Godot/PlayerLoadoutPanel.cs" id="1_cno7r"]
 [ext_resource type="PackedScene" uid="uid://bxlmfrb7bijip" path="res://Scenes/IconTile.tscn" id="2_6bpwx"]
 [ext_resource type="Texture2D" uid="uid://c7kwmfuyslwwu" path="res://Content/Icons/Classes/Bard.png" id="3_yqggp"]
 [ext_resource type="Texture2D" uid="uid://1yegckio8l8a" path="res://Content/Icons/Classes/Judge.png" id="4_ni87e"]

@@ -1,3 +1,5 @@
+// res://Scripts/Godot/PlayerLoadoutPanel.cs
+#nullable enable
 using Godot;
 using System;
 using System.Collections.Generic;
@@ -8,14 +10,14 @@ namespace DiceArena.Godot
 	public partial class PlayerLoadoutPanel : Control
 	{
 		// ---- Inspector paths ----
-		[Export] public NodePath ClassSelectionContainerPath { get; set; }
-		[Export] public NodePath Tier1SpellContainerPath { get; set; }
-		[Export] public NodePath Tier2SpellContainerPath { get; set; }
-		[Export] public NodePath LoadoutContainerPath { get; set; }
+		[Export] public NodePath ClassSelectionContainerPath { get; set; } = default!;
+		[Export] public NodePath Tier1SpellContainerPath { get; set; } = default!;
+		[Export] public NodePath Tier2SpellContainerPath { get; set; } = default!;
+		[Export] public NodePath LoadoutContainerPath { get; set; } = default!;
 
 		// Scenes for DEF/UPGRADE tiles (your .tscn scenes)
-		[Export] public PackedScene UpgradeSlotScene { get; set; }
-		[Export] public PackedScene DefensiveSlotScene { get; set; }
+		[Export] public PackedScene UpgradeSlotScene { get; set; } = default!;
+		[Export] public PackedScene DefensiveSlotScene { get; set; } = default!;
 
 		// Limits (shown vs picks)
 		[Export] public int Tier1OptionsShown { get; set; } = 3;
@@ -25,13 +27,13 @@ namespace DiceArena.Godot
 		[Export] public int LoadoutSlotCount { get; set; } = 6;
 
 		// ---- Runtime refs ----
-		private Container _classRoot;
-		private Container _tier1Root;
-		private Container _tier2Root;
-		private Container _loadoutRoot;
+		private Container _classRoot = default!;
+		private Container _tier1Root = default!;
+		private Container _tier2Root = default!;
+		private Container _loadoutRoot = default!;
 
 		// Chosen textures
-		private Texture2D _classPick;
+		private Texture2D? _classPick;
 		private readonly List<Texture2D> _tier1Picks = new();
 		private readonly List<Texture2D> _tier2Picks = new();
 
@@ -92,7 +94,6 @@ namespace DiceArena.Godot
 
 		private void BuildOrCollectLoadoutSlots()
 		{
-			// Always rebuild from scenes so we guarantee DEF/UP graphics are present
 			if (DefensiveSlotScene == null || UpgradeSlotScene == null)
 			{
 				GD.PushError("[PlayerLoadoutPanel] DefensiveSlotScene / UpgradeSlotScene are not assigned in the Inspector.");
@@ -195,11 +196,12 @@ namespace DiceArena.Godot
 			}
 		}
 
-		private void SetSlotTexture(int index, Texture2D tex)
+		private void SetSlotTexture(int index, Texture2D? tex)
 		{
 			if (index < 0 || index >= _loadoutSlots.Count) return;
-			var node = _loadoutSlots[index];
+			if (tex == null) return;
 
+			var node = _loadoutSlots[index];
 			switch (node)
 			{
 				case TextureRect tr:
@@ -214,10 +216,8 @@ namespace DiceArena.Godot
 			}
 		}
 
-		private Texture2D ExtractDefaultTexture(Control c)
+		private Texture2D? ExtractDefaultTexture(Control c)
 		{
-			// Returns whatever texture/icon the slot came with (DEF or UPG),
-			// so baseline fill preserves your scenes’ artwork.
 			return c switch
 			{
 				TextureRect tr when tr.Texture is Texture2D t => t,
@@ -227,20 +227,39 @@ namespace DiceArena.Godot
 			};
 		}
 
-		// Try to get a texture from various control types
-		private Texture2D FindFirstTexture(Node n)
+		private Texture2D? FindFirstTexture(Node n)
 		{
 			if (n is Button b && b.Icon is Texture2D t1) return t1;
 			if (n is TextureButton tb && tb.TextureNormal is Texture2D t2) return t2;
 			if (n is TextureRect tr && tr.Texture is Texture2D t3) return t3;
 
-			// look into first child TextureRect/Button/TextureButton
 			foreach (var child in n.GetChildren())
 			{
 				var tex = FindFirstTexture(child);
 				if (tex != null) return tex;
 			}
 			return null;
+		}
+
+		// ===================== PUBLIC API (for bridge/HUD) =====================
+
+		/// <summary>Returns the chosen class icon (if any).</summary>
+		public Texture2D? GetClassPickTexture() => _classPick;
+
+		/// <summary>Returns copies of the chosen Tier1 icons (order preserved).</summary>
+		public IReadOnlyList<Texture2D> GetTier1Picks() => _tier1Picks.ToArray();
+
+		/// <summary>Returns copies of the chosen Tier2 icons (order preserved).</summary>
+		public IReadOnlyList<Texture2D> GetTier2Picks() => _tier2Picks.ToArray();
+
+		/// <summary>
+		/// Convenience: returns (classIcon, tier1Icons, tier2Icons).
+		/// </summary>
+		public void GetChosenTextures(out Texture2D? classIcon, out List<Texture2D> tier1, out List<Texture2D> tier2)
+		{
+			classIcon = _classPick;
+			tier1 = new List<Texture2D>(_tier1Picks);
+			tier2 = new List<Texture2D>(_tier2Picks);
 		}
 	}
 }

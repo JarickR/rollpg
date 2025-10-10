@@ -2,105 +2,65 @@
 using System;
 using System.Collections.Generic;
 
-namespace DiceArena.Engine
+namespace RollPG.Engine
 {
-	public class GameState
+	/// <summary>
+	/// Bridges your loadout UI to combat and also exposes the members
+	/// expected by DiceArena.Engine.CombatSystem (Players, Enemies, Rng, AddLog).
+	/// Also resolves class strings and chosen spells from ContentDB.
+	/// </summary>
+	public sealed class GameState
 	{
-		public readonly List<Hero>  Players  = new();
-		public readonly List<Enemy> Enemies  = new();
-		public readonly List<string> Log     = new();
+		// ------------ Selections from the UI ------------
+		public RollPG.Content.Loadout PlayerLoadout { get; set; } = new();
 
-		public readonly List<InitiativeEntry> Initiative = new();
-		public readonly Random Rng = new();
+		// ------------ Resolved data from ContentDB ------------
+		public string ClassName { get; private set; } = "";
+		public string ClassTrait { get; private set; } = "";
+		public string ClassHeroAction { get; private set; } = "";
+		public List<RollPG.Content.SpellDef> ChosenSpells { get; } = new(); // fully-qualified to avoid ambiguity
 
-		public event Action<string>? OnLog;
+		// ------------ Minimal combat surface (for CombatSystem) ------------
+		// We reference DiceArena.Engine types so CombatSystem stays unchanged.
+		public List<DiceArena.Engine.Hero> Players { get; } = new();
+		public List<DiceArena.Engine.Enemy> Enemies { get; } = new();
 
+		// Shared RNG used by some upgrade flows
+		public Random Rng { get; } = new();
+
+		// Simple log collector; wire to UI as needed.
+		public List<string> Log { get; } = new();
 		public void AddLog(string msg)
 		{
-			if (string.IsNullOrWhiteSpace(msg)) return;
-			Log.Add(msg);
-			if (Log.Count > 200) Log.RemoveRange(0, Log.Count - 200);
-			OnLog?.Invoke(msg);
+			if (!string.IsNullOrWhiteSpace(msg))
+				Log.Add(msg);
 		}
 
-		public void AddHero(Hero h)  { if (h == null) return; Players.Add(h);  AddLog($"Added hero: {h.Name} [{h.ClassId}]"); }
-		public void AddPlayer(Hero h) => AddHero(h);
-		public void AddEnemy(Enemy e) { if (e == null) return; Enemies.Add(e); AddLog($"Spawned enemy: {e.Name} (T{e.Tier})"); }
+		// Example baseline stats you can expand later
+		public int CurrentHP { get; set; } = 10;
+		public int CurrentArmor { get; set; } = 0;
+		public Dictionary<string, int> Conditions { get; } = new();
 
-		public void ClearEncounter()
+		/// <summary>
+		/// Call after PlayerLoadout is assigned. Resolves class/traits and chosen spells.
+		/// </summary>
+		public void InitializeFromContent()
 		{
-			Enemies.Clear();
-			Initiative.Clear();
-			AddLog("Encounter cleared.");
-		}
+			ChosenSpells.Clear();
 
-		public int RollD20() => Rng.Next(1, 21);
-		public Spell RandomT1Spell() => Spells.Tier1Pool[Rng.Next(Spells.Tier1Pool.Count)];
-		public Spell RandomT2Spell() => Spells.Tier2Pool[Rng.Next(Spells.Tier2Pool.Count)];
-
-		public Spell RollUpgradeCandidate(Spell current)
-		{
-			if (current == null || current.Tier <= 1) return RandomT2Spell();
-			return current;
-		}
-
-		public void TickAllEnemyStatuses()
-		{
-			foreach (var e in Enemies)
+			var cls = RollPG.Content.ContentDB.GetClass(PlayerLoadout.ClassId);
+			if (cls != null)
 			{
-				if (e.Hp <= 0) continue;
+				ClassName       = cls.Name;
+				ClassTrait      = cls.Trait;
+				ClassHeroAction = cls.HeroAction;
+			}
 
-				if (e.PoisonStacks > 0)
-				{
-					e.Hp = Math.Max(0, e.Hp - e.PoisonStacks);
-					if (Rng.Next(6) == 0) e.PoisonStacks = Math.Max(0, e.PoisonStacks - 1);
-				}
-
-				if (e.BombStacks > 0)
-				{
-					int dmg = 3 * e.BombStacks;
-					e.Hp = Math.Max(0, e.Hp - dmg);
-					e.BombStacks = 0;
-				}
+			foreach (var sid in PlayerLoadout.SpellIds)
+			{
+				var s = RollPG.Content.ContentDB.GetSpell(sid);
+				if (s != null) ChosenSpells.Add(s);
 			}
 		}
-
-		public List<InitiativeEntry> BuildInitiativeDefault()
-		{
-			Initiative.Clear();
-			foreach (var h in Players)
-			{
-				var r = RollD20();
-				Initiative.Add(new InitiativeEntry(h.Id, false, r));
-				AddLog($"{h.Name} (P) rolled initiative: {r}");
-			}
-			foreach (var e in Enemies)
-			{
-				var r = RollD20();
-				Initiative.Add(new InitiativeEntry(e.Id, true, r));
-				AddLog($"{e.Name} (E) rolled initiative: {r}");
-			}
-			Initiative.Sort((a,b) => {
-				int cmp = b.Roll.CompareTo(a.Roll);
-				if (cmp != 0) return cmp;
-				if (a.IsEnemy != b.IsEnemy) return a.IsEnemy ? 1 : -1; // players first on tie
-				return string.Compare(a.Id, b.Id, StringComparison.Ordinal);
-			});
-			return Initiative;
-		}
-	}
-
-	public struct InitiativeEntry
-	{
-		public string Id { get; }
-		public bool IsEnemy { get; }
-		public int Roll { get; }
-
-		public InitiativeEntry(string id, bool isEnemy, int roll)
-		{
-			Id = id; IsEnemy = isEnemy; Roll = roll;
-		}
-
-		public override string ToString() => $"{(IsEnemy ? "E" : "P")}:{Id}@{Roll}";
 	}
 }

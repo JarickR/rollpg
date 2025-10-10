@@ -2,6 +2,7 @@
 #nullable enable
 using System;
 using System.Linq;
+using RollPG.Engine; // <-- brings GameState into scope
 
 namespace DiceArena.Engine
 {
@@ -109,33 +110,33 @@ namespace DiceArena.Engine
 					break;
 
 				case FaceType.Spell:
+				{
+					int slot = (face.Slot >= 0) ? face.Slot : 0;
+					var spell = face.Spell ?? ((hero.Loadout.Count > slot) ? hero.Loadout[slot] : Spells.Blank());
+					if (spell.Kind == SpellKind.Blank)
 					{
-						int slot = (face.Slot >= 0) ? face.Slot : 0;
-						var spell = face.Spell ?? ((hero.Loadout.Count > slot) ? hero.Loadout[slot] : Spells.Blank());
-						if (spell.Kind == SpellKind.Blank)
-						{
-							state?.AddLog($"{hero.Name} rolled a blank.");
-							return;
-						}
-
-						// pick a target if offensive
-						if (target == null && (spell.Kind == SpellKind.Attack || spell.Kind == SpellKind.Sweep ||
-											   spell.Kind == SpellKind.Fireball || spell.Kind == SpellKind.Poison ||
-											   spell.Kind == SpellKind.Bomb))
-						{
-							if (state != null) target = state.Enemies.FirstOrDefault(e => e.Hp > 0);
-						}
-
-						if (target == null && state != null)
-						{
-							state.AddLog($"{hero.Name} has no target.");
-							return;
-						}
-
-						Cast(hero, target!, spell);
-						state?.AddLog($"{hero.Name} cast {spell.Name}{(target != null ? $" on {target.Name}" : "")}.");
+						state?.AddLog($"{hero.Name} rolled a blank.");
+						return;
 					}
+
+					// pick a target if offensive
+					if (target == null && (spell.Kind == SpellKind.Attack || spell.Kind == SpellKind.Sweep ||
+										   spell.Kind == SpellKind.Fireball || spell.Kind == SpellKind.Poison ||
+										   spell.Kind == SpellKind.Bomb))
+					{
+						if (state != null) target = state.Enemies.FirstOrDefault(e => e.Hp > 0);
+					}
+
+					if (target == null && state != null)
+					{
+						state.AddLog($"{hero.Name} has no target.");
+						return;
+					}
+
+					Cast(hero, target!, spell);
+					state?.AddLog($"{hero.Name} cast {spell.Name}{(target != null ? $" on {target.Name}" : "")}.");
 					break;
+				}
 
 				case FaceType.Blank:
 				default:
@@ -147,26 +148,26 @@ namespace DiceArena.Engine
 		// Damage helpers
 		public static void ApplyDamage(Hero hero, int amount, bool bypassArmor)
 		{
-			amount = System.Math.Max(0, amount);
+			amount = Math.Max(0, amount);
 			if (!bypassArmor && hero.Armor > 0)
 			{
-				var blocked = System.Math.Min(hero.Armor, amount);
+				var blocked = Math.Min(hero.Armor, amount);
 				hero.Armor -= blocked;
 				amount -= blocked;
 			}
-			if (amount > 0) hero.Hp = System.Math.Max(0, hero.Hp - amount);
+			if (amount > 0) hero.Hp = Math.Max(0, hero.Hp - amount);
 		}
 
 		public static void ApplyDamage(Enemy enemy, int amount, bool bypassArmor)
 		{
-			amount = System.Math.Max(0, amount);
+			amount = Math.Max(0, amount);
 			if (!bypassArmor && enemy.Armor > 0)
 			{
-				var blocked = System.Math.Min(enemy.Armor, amount);
+				var blocked = Math.Min(enemy.Armor, amount);
 				enemy.Armor -= blocked;
 				amount -= blocked;
 			}
-			if (amount > 0) enemy.Hp = System.Math.Max(0, enemy.Hp - amount);
+			if (amount > 0) enemy.Hp = Math.Max(0, enemy.Hp - amount);
 		}
 
 		public static int DamageByTier(int tier) => tier switch { 1 => 2, 2 => 4, 3 => 6, _ => 1 };
