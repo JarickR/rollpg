@@ -1,13 +1,12 @@
-[gd_scene load_steps=12 format=3 uid="uid://dalkd4gr4dlrq"]
+[gd_scene load_steps=11 format=3 uid="uid://dalkd4gr4dlrq"]
 
 [ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1"]
-[ext_resource type="Script" uid="uid://cw3b8jlbg5fa4" path="res://Scripts/Godot/BattleLogPanel.cs" id="2"]
-[ext_resource type="Script" uid="uid://wcwow2wkvylk" path="res://Scripts/Godot/EnemyPanel.cs" id="2_p0hwe"]
 [ext_resource type="Script" uid="uid://ejg081jx0w6i" path="res://Scripts/Godot/BattleRoot.cs" id="2_vt32t"]
-[ext_resource type="Script" uid="uid://dxd8vxysi0643" path="res://Scripts/Godot/BattleHUD.cs" id="4_ppc7m"]
-[ext_resource type="Script" uid="uid://bsasdyrgmkamm" path="res://Scripts/Godot/HeroCard.cs" id="5_qwuey"]
+[ext_resource type="PackedScene" uid="uid://dox20kqjh1ly0" path="res://Scenes/HUDRow.tscn" id="3_aob1w"]
+[ext_resource type="PackedScene" uid="uid://ri28ks3ndpg3" path="res://Scenes/HPBar.tscn" id="4_58i56"]
+[ext_resource type="Texture2D" uid="uid://cedfy1moklbi4" path="res://Content/Icons/DefensiveIcon.png" id="4_o8ewf"]
+[ext_resource type="Texture2D" uid="uid://dswtic4py86sq" path="res://Content/Icons/UpgradeIcon.png" id="5_aob1w"]
 [ext_resource type="Script" uid="uid://emvjb148wv62" path="res://Scripts/Godot/LoadoutToBattleBridge.cs" id="7_7vkth"]
-[ext_resource type="PackedScene" uid="uid://d4ewlmx3ncbfg" path="res://Scenes/MemberCard.tscn" id="7_o8ewf"]
 [ext_resource type="PackedScene" uid="uid://djwyy84baep1n" path="res://Scenes/LoadoutScreen.tscn" id="8_o8ewf"]
 [ext_resource type="PackedScene" uid="uid://yyf8aq04mcur" path="res://Scenes/UpgradeTile.tscn" id="9_58i56"]
 [ext_resource type="PackedScene" uid="uid://coig18xlcwjcp" path="res://Scenes/DefensiveTile.tscn" id="10_ppc7m"]
@@ -22,6 +21,7 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+mouse_filter = 2
 script = ExtResource("1")
 
 [node name="BattleRoot" type="Control" parent="."]
@@ -32,120 +32,302 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 1
+mouse_filter = 2
 script = ExtResource("2_vt32t")
-HeroCardScene = ExtResource("7_o8ewf")
-FriendlyRootPath = NodePath("HSplitContainer/LeftCol/HeroPanel")
+ClassIconPath = NodePath("")
+T1IconPath = NodePath("")
+T2IconPath = NodePath("")
 
-[node name="HSplitContainer" type="HSplitContainer" parent="BattleRoot"]
+[node name="PlayerSpawnsRoot" type="Node3D" parent="BattleRoot"]
+
+[node name="Spawn0" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
+
+[node name="Spawn1" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
+
+[node name="Spawn2" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
+
+[node name="Spawn3" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
+
+[node name="LogLabel" type="Label" parent="BattleRoot"]
 layout_mode = 0
-offset_right = 420.0
-offset_bottom = 236.0
-script = ExtResource("4_ppc7m")
+offset_right = 40.0
+offset_bottom = 23.0
 
-[node name="LeftCol" type="VBoxContainer" parent="BattleRoot/HSplitContainer"]
+[node name="HUDLayer" type="CanvasLayer" parent="BattleRoot"]
+
+[node name="HUDRoot" type="VBoxContainer" parent="BattleRoot/HUDLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HudRow1" parent="BattleRoot/HUDLayer/HUDRoot" instance=ExtResource("3_aob1w")]
+layout_mode = 2
+
+[node name="HudRow2" parent="BattleRoot/HUDLayer/HUDRoot" instance=ExtResource("3_aob1w")]
+layout_mode = 2
+
+[node name="HudRow3" parent="BattleRoot/HUDLayer/HUDRoot" instance=ExtResource("3_aob1w")]
+layout_mode = 2
+
+[node name="HudRow4" parent="BattleRoot/HUDLayer/HUDRoot" instance=ExtResource("3_aob1w")]
+layout_mode = 2
+
+[node name="Layout" type="VBoxContainer" parent="BattleRoot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="EnemyRow" type="HBoxContainer" parent="BattleRoot/Layout"]
+layout_mode = 2
+
+[node name="EnemyPanel1" type="PanelContainer" parent="BattleRoot/Layout/EnemyRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HeroPanel" type="VBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
-unique_name_in_owner = true
+[node name="VBoxContainer" type="HBoxContainer" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1"]
 layout_mode = 2
-size_flags_vertical = 3
-script = ExtResource("5_qwuey")
+theme_override_constants/separation = 8
 
-[node name="ClassIcon" type="TextureRect" parent="BattleRoot/HSplitContainer/LeftCol/HeroPanel"]
-unique_name_in_owner = true
+[node name="Label" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1/VBoxContainer"]
 layout_mode = 2
+text = "Enemy 1"
 
-[node name="T1Icon" type="TextureRect" parent="BattleRoot/HSplitContainer/LeftCol/HeroPanel"]
-unique_name_in_owner = true
+[node name="VBoxContainer" type="VBoxContainer" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1/VBoxContainer"]
 layout_mode = 2
 
-[node name="T2Icon" type="TextureRect" parent="BattleRoot/HSplitContainer/LeftCol/HeroPanel"]
-unique_name_in_owner = true
+[node name="HP" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1/VBoxContainer/VBoxContainer"]
 layout_mode = 2
+text = "HP"
 
-[node name="Name" type="Label" parent="BattleRoot/HSplitContainer/LeftCol/HeroPanel"]
-unique_name_in_owner = true
+[node name="ARM" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1/VBoxContainer/VBoxContainer"]
 layout_mode = 2
+text = "ARM"
 
-[node name="EnemyPanel" type="VBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-script = ExtResource("2_p0hwe")
-
-[node name="HSeparator" type="HSeparator" parent="BattleRoot/HSplitContainer/LeftCol"]
-custom_minimum_size = Vector2(0, 6)
-layout_mode = 2
-size_flags_stretch_ratio = 0.0
-
-[node name="LogBox" type="VBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(420, 150)
+[node name="EnemyPanel2" type="PanelContainer" parent="BattleRoot/Layout/EnemyRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
-size_flags_stretch_ratio = 2.0
-script = ExtResource("2")
 
-[node name="HSeparator2" type="HSeparator" parent="BattleRoot/HSplitContainer/LeftCol"]
+[node name="VBoxContainer" type="HBoxContainer" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2/VBoxContainer"]
+layout_mode = 2
+text = "Enemy 1"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2/VBoxContainer"]
 layout_mode = 2
 
-[node name="HeroArea" type="VBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
-unique_name_in_owner = true
+[node name="HP" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2/VBoxContainer/VBoxContainer"]
 layout_mode = 2
-size_flags_stretch_ratio = 3.0
+text = "HP"
 
-[node name="Flex" type="Control" parent="BattleRoot/HSplitContainer/LeftCol"]
+[node name="ARM" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2/VBoxContainer/VBoxContainer"]
 layout_mode = 2
-size_flags_vertical = 3
+text = "ARM"
 
-[node name="Buttons" type="HBoxContainer" parent="BattleRoot/HSplitContainer/LeftCol"]
-custom_minimum_size = Vector2(0, 48)
+[node name="LogRow" type="HBoxContainer" parent="BattleRoot/Layout"]
 layout_mode = 2
 
-[node name="Main_ButtonsRow#UpgradeBtn" type="Button" parent="BattleRoot/HSplitContainer/LeftCol/Buttons"]
+[node name="LogPanel" type="PanelContainer" parent="BattleRoot/Layout/LogRow"]
 layout_mode = 2
-text = "Upgrade"
+size_flags_horizontal = 3
 
-[node name="Main_ButtonsRow#D6Btn" type="Button" parent="BattleRoot/HSplitContainer/LeftCol/Buttons"]
+[node name="LogLabel" type="RichTextLabel" parent="BattleRoot/Layout/LogRow"]
+custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
-text = "d6"
 
-[node name="HeroCard" type="Control" parent="BattleRoot"]
-visible = false
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
-script = ExtResource("5_qwuey")
+[node name="HeroRow" type="HBoxContainer" parent="BattleRoot/Layout"]
+layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="BattleRoot/HeroCard"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="HeroPanel1" type="PanelContainer" parent="BattleRoot/Layout/HeroRow"]
+layout_mode = 2
 
-[node name="ClassLabel" type="Label" parent="BattleRoot/HeroCard"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="VBoxContainer" type="VBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1"]
+layout_mode = 2
 
-[node name="Tier1Label" type="Label" parent="BattleRoot/HeroCard"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="HeroPanelLayout" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer"]
+layout_mode = 2
 
-[node name="Tier2Label" type="Label" parent="BattleRoot/HeroCard"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="NameLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout"]
+layout_mode = 2
+size_flags_vertical = 6
+text = "Hero 1"
 
-[node name="LoadoutToBattleBridge" type="Node" parent="."]
+[node name="Header" type="VBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HpBar" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout/Header" instance=ExtResource("4_58i56")]
+layout_mode = 2
+
+[node name="ARMLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout/Header"]
+layout_mode = 2
+size_flags_horizontal = 6
+text = "5"
+
+[node name="StatusRow" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer"]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/StatusRow"]
+layout_mode = 2
+text = "Status Effects:"
+
+[node name="StatusIcons" type="HFlowContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/StatusRow"]
+layout_mode = 2
+
+[node name="HUDRow" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer"]
+layout_mode = 2
+
+[node name="Slot1" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot2" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot3" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot4" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot5" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot6" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="HeroPanel2" type="PanelContainer" parent="BattleRoot/Layout/HeroRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel2"]
+layout_mode = 2
+
+[node name="HeroPanelLayout" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer"]
+layout_mode = 2
+
+[node name="NameLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HeroPanelLayout"]
+layout_mode = 2
+size_flags_vertical = 6
+text = "Hero 2"
+
+[node name="Header" type="VBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HeroPanelLayout"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HPLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HeroPanelLayout/Header"]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 0
+text = "20"
+
+[node name="ARMLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HeroPanelLayout/Header"]
+layout_mode = 2
+size_flags_horizontal = 6
+text = "5"
+
+[node name="StatusRow" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer"]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/StatusRow"]
+layout_mode = 2
+text = "Status Effects:"
+
+[node name="StatusIcons" type="HFlowContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/StatusRow"]
+layout_mode = 2
+
+[node name="HUDRow" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer"]
+layout_mode = 2
+
+[node name="Slot1" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot2" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot3" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot4" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot5" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="Slot6" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel2/VBoxContainer/HUDRow"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="LoadoutToBattleBridge" type="Node" parent="." node_paths=PackedStringArray("LoadoutScreen", "BattleRoot", "Slot1", "Slot2", "Slot3", "Slot4", "Slot5", "Slot6", "HUDRow")]
 unique_name_in_owner = true
 script = ExtResource("7_7vkth")
+LoadoutScreen = NodePath("../LoadoutScreen")
+BattleRoot = NodePath("../BattleRoot")
+Slot1 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot1")
+Slot2 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot2")
+Slot3 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot3")
+Slot4 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot4")
+Slot5 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot5")
+Slot6 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot6")
+HUDRow = NodePath("../BattleRoot/HUDLayer/HUDRoot/HudRow1")
+DefensiveIcon = ExtResource("4_o8ewf")
+UpgradeIcon = ExtResource("5_aob1w")
 
 [node name="LoadoutScreen" parent="." instance=ExtResource("8_o8ewf")]
+visible = false
 layout_mode = 1
+
+[node name="LayoutRoot" parent="LoadoutScreen" index="0"]
+mouse_filter = 0
+
+[node name="PartySizeButtonContainer" parent="LoadoutScreen/LayoutRoot" index="0"]
+mouse_filter = 0
+
+[node name="HeaderRow" parent="LoadoutScreen/LayoutRoot" index="1"]
+mouse_filter = 0
+
+[node name="Spacer" parent="LoadoutScreen/LayoutRoot/HeaderRow" index="0"]
+mouse_filter = 2
+
+[node name="FinalizeBtn" parent="LoadoutScreen/LayoutRoot/HeaderRow" index="1"]
+z_index = 1
+
+[node name="MainRow" parent="LoadoutScreen/LayoutRoot" index="2"]
+mouse_filter = 2
+
+[node name="LeftPanel" parent="LoadoutScreen/LayoutRoot/MainRow" index="0"]
+mouse_filter = 2
 
 [node name="RightPanel" parent="LoadoutScreen/LayoutRoot/MainRow" index="1"]
 columns = 4
@@ -160,6 +342,9 @@ DefensiveSlotScene = ExtResource("10_ppc7m")
 
 [node name="PlayerNameLabel" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="0"]
 text = "Player 1"
+
+[node name="ClassSelectionContainer" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="2"]
+mouse_filter = 0
 
 [node name="LoadoutContainer" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="8"]
 size_flags_vertical = 3
@@ -180,6 +365,9 @@ LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer"
 UpgradeSlotScene = ExtResource("9_58i56")
 DefensiveSlotScene = ExtResource("10_ppc7m")
 
+[node name="VBoxContainer" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel3/MarginContainer" index="0"]
+mouse_filter = 2
+
 [node name="PlayerLoadoutPanel4" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="3"]
 ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
 Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
@@ -187,8 +375,6 @@ Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellCont
 LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
 UpgradeSlotScene = ExtResource("9_58i56")
 DefensiveSlotScene = ExtResource("10_ppc7m")
-
-[connection signal="pressed" from="LoadoutScreen/LayoutRoot/HeaderRow/FinalizeBtn" to="LoadoutToBattleBridge" method="_on_finalize_btn_pressed"]
 
 [editable path="LoadoutScreen"]
 [editable path="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]

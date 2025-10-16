@@ -11,25 +11,25 @@ namespace DiceArena.Godot
 	{
 		// ---- Inspector paths ----
 		[Export] public NodePath ClassSelectionContainerPath { get; set; } = default!;
-		[Export] public NodePath Tier1SpellContainerPath { get; set; } = default!;
-		[Export] public NodePath Tier2SpellContainerPath { get; set; } = default!;
-		[Export] public NodePath LoadoutContainerPath { get; set; } = default!;
+		[Export] public NodePath Tier1SpellContainerPath   { get; set; } = default!;
+		[Export] public NodePath Tier2SpellContainerPath   { get; set; } = default!;
+		[Export] public NodePath LoadoutContainerPath      { get; set; } = default!;
 
-		// Scenes for DEF/UPGRADE tiles (your .tscn scenes)
-		[Export] public PackedScene UpgradeSlotScene { get; set; } = default!;
+		// Scenes for DEF/UPGRADE tiles
+		[Export] public PackedScene UpgradeSlotScene   { get; set; } = default!;
 		[Export] public PackedScene DefensiveSlotScene { get; set; } = default!;
 
 		// Limits (shown vs picks)
 		[Export] public int Tier1OptionsShown { get; set; } = 3;
 		[Export] public int Tier2OptionsShown { get; set; } = 2;
-		[Export] public int Tier1PickCount { get; set; } = 2;
-		[Export] public int Tier2PickCount { get; set; } = 1;
-		[Export] public int LoadoutSlotCount { get; set; } = 6;
+		[Export] public int Tier1PickCount    { get; set; } = 2;
+		[Export] public int Tier2PickCount    { get; set; } = 1;
+		[Export] public int LoadoutSlotCount  { get; set; } = 6;
 
 		// ---- Runtime refs ----
-		private Container _classRoot = default!;
-		private Container _tier1Root = default!;
-		private Container _tier2Root = default!;
+		private Container _classRoot   = default!;
+		private Container _tier1Root   = default!;
+		private Container _tier2Root   = default!;
 		private Container _loadoutRoot = default!;
 
 		// Chosen textures
@@ -42,54 +42,97 @@ namespace DiceArena.Godot
 
 		public override void _Ready()
 		{
-			// Resolve nodes
-			_classRoot = GetNode<Container>(ClassSelectionContainerPath);
-			_tier1Root = GetNode<Container>(Tier1SpellContainerPath);
-			_tier2Root = GetNode<Container>(Tier2SpellContainerPath);
+			_classRoot   = GetNode<Container>(ClassSelectionContainerPath);
+			_tier1Root   = GetNode<Container>(Tier1SpellContainerPath);
+			_tier2Root   = GetNode<Container>(Tier2SpellContainerPath);
 			_loadoutRoot = GetNode<Container>(LoadoutContainerPath);
 
-			// Wire buttons
-			WireClassButtons();
-			WireTierButtons(_tier1Root, 1);
-			WireTierButtons(_tier2Root, 2);
+			WireButtons(_classRoot, 0);
+			WireButtons(_tier1Root, 1);
+			WireButtons(_tier2Root, 2);
 
-			// Limit the options shown visually
-			LimitOptionsShown(_tier1Root, Tier1OptionsShown);
-			LimitOptionsShown(_tier2Root, Tier2OptionsShown);
-
-			// Build loadout slots list (use existing children or create)
+			// Build loadout tiles now so layout exists
 			BuildOrCollectLoadoutSlots();
 
+			// Defer so children are fully ready before we toggle visibility
+			CallDeferred(nameof(ApplyLimitsAndRefresh));
+		}
+
+		private void ApplyLimitsAndRefresh()
+		{
+			RandomizeOptionsShown(_tier1Root, Math.Max(0, Tier1OptionsShown), seedSalt: 101);
+			RandomizeOptionsShown(_tier2Root, Math.Max(0, Tier2OptionsShown), seedSalt: 202);
 			UpdateLoadoutVisuals();
 		}
 
-		private void WireClassButtons()
-		{
-			foreach (var child in _classRoot.GetChildren())
-			{
-				if (child is Button b)
-					b.Pressed += () => OnClassPicked(b);
-			}
-		}
+		// ---------------- wiring ----------------
 
-		private void WireTierButtons(Container root, int tier)
+		private void WireButtons(Container root, int tier)
 		{
+			int btn = 0, tbtn = 0, other = 0;
 			foreach (var child in root.GetChildren())
 			{
-				if (child is Button b)
-					b.Pressed += () => OnTierPicked(tier, b);
+				switch (child)
+				{
+					case Button b:
+						btn++;
+						if (tier == 0) b.Pressed += () => OnClassPicked(b);
+						else           b.Pressed += () => OnTierPicked(tier, b);
+						break;
+
+					case TextureButton tb:
+						tbtn++;
+						if (tier == 0) tb.Pressed += () => OnClassPicked(tb);
+						else            tb.Pressed += () => OnTierPicked(tier, tb);
+						break;
+
+					default:
+						if (child is Control) other++;
+						break;
+				}
 			}
+			string label = tier switch { 0 => "Class", 1 => "Tier1", 2 => "Tier2", _ => $"Tier{tier}" };
+			GD.Print($"[PlayerLoadoutPanel] WireTiles[{label}] -> Buttons={btn}, TextureButtons={tbtn}, Controls={other}");
 		}
 
-		private void LimitOptionsShown(Container root, int shown)
+		/// <summary>
+		/// Randomly selects which option tiles are visible (without reordering nodes).
+		/// </summary>
+		private void RandomizeOptionsShown(Container root, int shown, int seedSalt = 0)
 		{
-			int i = 0;
-			foreach (var child in root.GetChildren())
+			var tiles = root.GetChildren()
+				.OfType<Control>()
+				.Where(c => c is Button || c is TextureButton)
+				.ToList();
+
+			if (tiles.Count == 0)
 			{
-				if (child is Control c)
-					c.Visible = i < shown;
-				i++;
+				GD.Print($"[PlayerLoadoutPanel] Randomize: no selectable tiles under {root.GetPath()}");
+				return;
 			}
+
+			int seed =
+				(int)(Time.GetTicksUsec() & 0x7FFFFFFF) ^
+				(int)(GetInstanceId() & 0x7FFFFFFF) ^
+				seedSalt;
+
+			var rng = new System.Random(seed);
+
+			var idx = Enumerable.Range(0, tiles.Count).ToArray();
+			for (int i = idx.Length - 1; i > 0; i--)
+			{
+				int j = rng.Next(i + 1);
+				(idx[i], idx[j]) = (idx[j], idx[i]);
+			}
+
+			int allow = Math.Clamp(shown, 0, tiles.Count);
+			var visibleSet = new HashSet<int>(idx.Take(allow));
+
+			for (int i = 0; i < tiles.Count; i++)
+				tiles[i].Visible = visibleSet.Contains(i);
+
+			var hiddenNames = tiles.Where((_, i) => !visibleSet.Contains(i)).Select(t => t.Name);
+			GD.Print($"[PlayerLoadoutPanel] Shown {allow}/{tiles.Count} → hidden [{string.Join(", ", hiddenNames)}]");
 		}
 
 		private void BuildOrCollectLoadoutSlots()
@@ -100,7 +143,6 @@ namespace DiceArena.Godot
 				return;
 			}
 
-			// Clear anything that was in the container
 			foreach (var child in _loadoutRoot.GetChildren())
 				child.QueueFree();
 
@@ -109,7 +151,7 @@ namespace DiceArena.Godot
 			for (int i = 0; i < LoadoutSlotCount; i++)
 			{
 				var scene = (i == LoadoutSlotCount - 1) ? UpgradeSlotScene : DefensiveSlotScene;
-				var inst = scene.Instantiate<Control>();
+				var inst  = scene.Instantiate<Control>();
 				_loadoutRoot.AddChild(inst);
 				_loadoutSlots.Add(inst);
 			}
@@ -117,25 +159,25 @@ namespace DiceArena.Godot
 
 		// ---------------- Click handlers ----------------
 
-		private void OnClassPicked(Button btn)
+		private void OnClassPicked(Node src)
 		{
-			GD.Print($"[Click:PlayerLoadoutPanel] class on {btn.Name}");
-			var tex = FindFirstTexture(btn);
+			var tex = FindFirstTexture(src);
 			if (tex == null)
 			{
-				GD.Print($"[Click] No texture found in class {btn.Name}");
+				GD.Print($"[Click] No texture found in class {src.Name}");
 				return;
 			}
 			_classPick = tex;
+			GD.Print($"[Click:PlayerLoadoutPanel] class on {src.Name}");
 			UpdateLoadoutVisuals();
 		}
 
-		private void OnTierPicked(int tier, Button btn)
+		private void OnTierPicked(int tier, Node src)
 		{
-			var tex = FindFirstTexture(btn);
+			var tex = FindFirstTexture(src);
 			if (tex == null)
 			{
-				GD.Print($"[Click] No texture found in {btn.Name}");
+				GD.Print($"[Click] No texture found in {src.Name}");
 				return;
 			}
 
@@ -147,7 +189,7 @@ namespace DiceArena.Godot
 					if (_tier1Picks.Count > Tier1PickCount)
 						_tier1Picks.RemoveAt(0);
 				}
-				GD.Print($"[Click:PlayerLoadoutPanel] tier=1 on {btn.Name}");
+				GD.Print($"[Click:PlayerLoadoutPanel] tier=1 on {src.Name}");
 			}
 			else
 			{
@@ -157,7 +199,7 @@ namespace DiceArena.Godot
 					if (_tier2Picks.Count > Tier2PickCount)
 						_tier2Picks.RemoveAt(0);
 				}
-				GD.Print($"[Click:PlayerLoadoutPanel] tier=2 on {btn.Name}");
+				GD.Print($"[Click:PlayerLoadoutPanel] tier=2 on {src.Name}");
 			}
 
 			UpdateLoadoutVisuals();
@@ -171,7 +213,7 @@ namespace DiceArena.Godot
 
 			int last = _loadoutSlots.Count - 1;
 
-			// 1) Reset **all** slots to their scene-default texture (DEF or UPG)
+			// 1) Reset all slots to their scene-default texture (DEF or UPG)
 			for (int i = 0; i < _loadoutSlots.Count; i++)
 			{
 				var defTex = ExtractDefaultTexture(_loadoutSlots[i]);
@@ -182,7 +224,7 @@ namespace DiceArena.Godot
 			if (_classPick != null)
 				SetSlotTexture(0, _classPick);
 
-			// 3) Fill spells into slots 1..last-1 (last is always the UPGRADE tile)
+			// 3) Fill spells into slots 1..last-1 (last is the UPGRADE tile)
 			int cursor = 1;
 			foreach (var t in _tier1Picks)
 			{
@@ -201,33 +243,26 @@ namespace DiceArena.Godot
 			if (index < 0 || index >= _loadoutSlots.Count) return;
 			if (tex == null) return;
 
-			var node = _loadoutSlots[index];
-			switch (node)
+			switch (_loadoutSlots[index])
 			{
-				case TextureRect tr:
-					tr.Texture = tex;
-					break;
-				case Button b:
-					b.Icon = tex;
-					break;
-				case TextureButton tb:
-					tb.TextureNormal = tex;
-					break;
+				case TextureRect tr:     tr.Texture       = tex; break;
+				case Button b:           b.Icon           = tex; break;
+				case TextureButton tb:   tb.TextureNormal = tex; break;
 			}
 		}
 
-		private Texture2D? ExtractDefaultTexture(Control c)
+		private static Texture2D? ExtractDefaultTexture(Control c)
 		{
 			return c switch
 			{
-				TextureRect tr when tr.Texture is Texture2D t => t,
-				Button b when b.Icon is Texture2D t => t,
-				TextureButton tb when tb.TextureNormal is Texture2D t => t,
+				TextureRect tr   when tr.Texture is Texture2D t      => t,
+				Button b         when b.Icon          is Texture2D t => t,
+				TextureButton tb when tb.TextureNormal is Texture2D t=> t,
 				_ => null
 			};
 		}
 
-		private Texture2D? FindFirstTexture(Node n)
+		private static Texture2D? FindFirstTexture(Node n)
 		{
 			if (n is Button b && b.Icon is Texture2D t1) return t1;
 			if (n is TextureButton tb && tb.TextureNormal is Texture2D t2) return t2;
@@ -243,18 +278,10 @@ namespace DiceArena.Godot
 
 		// ===================== PUBLIC API (for bridge/HUD) =====================
 
-		/// <summary>Returns the chosen class icon (if any).</summary>
 		public Texture2D? GetClassPickTexture() => _classPick;
-
-		/// <summary>Returns copies of the chosen Tier1 icons (order preserved).</summary>
 		public IReadOnlyList<Texture2D> GetTier1Picks() => _tier1Picks.ToArray();
-
-		/// <summary>Returns copies of the chosen Tier2 icons (order preserved).</summary>
 		public IReadOnlyList<Texture2D> GetTier2Picks() => _tier2Picks.ToArray();
 
-		/// <summary>
-		/// Convenience: returns (classIcon, tier1Icons, tier2Icons).
-		/// </summary>
 		public void GetChosenTextures(out Texture2D? classIcon, out List<Texture2D> tier1, out List<Texture2D> tier2)
 		{
 			classIcon = _classPick;

@@ -1,0 +1,78 @@
+[gd_scene load_steps=6 format=3 uid="uid://ri28ks3ndpg3"]
+
+[ext_resource type="Script" uid="uid://cp5oxo1bn380m" path="res://Scenes/HpBar.cs" id="1_wsiwr"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_avp23"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oy76q"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1nqgd"]
+bg_color = Color(0.164706, 0.164706, 0.164706, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wsiwr"]
+bg_color = Color(0.517647, 0, 0, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="HpBar" type="Control"]
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_wsiwr")
+
+[node name="Text" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -21.5
+offset_top = -11.5
+offset_right = 21.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+text = "20/20"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_avp23")
+theme_override_styles/fill = SubResource("StyleBoxFlat_oy76q")
+show_percentage = false
+
+[node name="HPFill" type="ProgressBar" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_1nqgd")
+theme_override_styles/fill = SubResource("StyleBoxFlat_wsiwr")
+value = 100.0
+show_percentage = false
