@@ -1,11 +1,14 @@
-[gd_scene load_steps=11 format=3 uid="uid://dalkd4gr4dlrq"]
+[gd_scene load_steps=14 format=3 uid="uid://dalkd4gr4dlrq"]
 
 [ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1"]
 [ext_resource type="Script" uid="uid://ejg081jx0w6i" path="res://Scripts/Godot/BattleRoot.cs" id="2_vt32t"]
-[ext_resource type="PackedScene" uid="uid://dox20kqjh1ly0" path="res://Scenes/HUDRow.tscn" id="3_aob1w"]
+[ext_resource type="Script" uid="uid://bbssubg6gnpyc" path="res://Scripts/Godot/UI/TextEditCaretGuard.cs" id="3_ffosx"]
 [ext_resource type="PackedScene" uid="uid://ri28ks3ndpg3" path="res://Scenes/HPBar.tscn" id="4_58i56"]
+[ext_resource type="Script" uid="uid://55v6vsget2xt" path="res://Scripts/Godot/UI/RollButtonController.cs" id="4_l7tus"]
 [ext_resource type="Texture2D" uid="uid://cedfy1moklbi4" path="res://Content/Icons/DefensiveIcon.png" id="4_o8ewf"]
+[ext_resource type="Script" uid="uid://woaa4qt3pt5d" path="res://Scripts/Godot/UI/RollPopupSpawner.cs" id="4_ppc7m"]
 [ext_resource type="Texture2D" uid="uid://dswtic4py86sq" path="res://Content/Icons/UpgradeIcon.png" id="5_aob1w"]
+[ext_resource type="PackedScene" uid="uid://d1etmrap0y04m" path="res://Scenes/RollPopup.tscn" id="5_l7tus"]
 [ext_resource type="Script" uid="uid://emvjb148wv62" path="res://Scripts/Godot/LoadoutToBattleBridge.cs" id="7_7vkth"]
 [ext_resource type="PackedScene" uid="uid://djwyy84baep1n" path="res://Scenes/LoadoutScreen.tscn" id="8_o8ewf"]
 [ext_resource type="PackedScene" uid="uid://yyf8aq04mcur" path="res://Scenes/UpgradeTile.tscn" id="9_58i56"]
@@ -34,9 +37,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_vt32t")
-ClassIconPath = NodePath("")
-T1IconPath = NodePath("")
-T2IconPath = NodePath("")
 
 [node name="PlayerSpawnsRoot" type="Node3D" parent="BattleRoot"]
 
@@ -52,28 +52,7 @@ T2IconPath = NodePath("")
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0
-
-[node name="HUDLayer" type="CanvasLayer" parent="BattleRoot"]
-
-[node name="HUDRoot" type="VBoxContainer" parent="BattleRoot/HUDLayer"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="HudRow1" parent="BattleRoot/HUDLayer/HUDRoot" instance=ExtResource("3_aob1w")]
-layout_mode = 2
-
-[node name="HudRow2" parent="BattleRoot/HUDLayer/HUDRoot" instance=ExtResource("3_aob1w")]
-layout_mode = 2
-
-[node name="HudRow3" parent="BattleRoot/HUDLayer/HUDRoot" instance=ExtResource("3_aob1w")]
-layout_mode = 2
-
-[node name="HudRow4" parent="BattleRoot/HUDLayer/HUDRoot" instance=ExtResource("3_aob1w")]
-layout_mode = 2
+script = ExtResource("3_ffosx")
 
 [node name="Layout" type="VBoxContainer" parent="BattleRoot"]
 layout_mode = 1
@@ -82,17 +61,21 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/separation = 12
 
 [node name="EnemyRow" type="HBoxContainer" parent="BattleRoot/Layout"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="EnemyPanel1" type="PanelContainer" parent="BattleRoot/Layout/EnemyRow"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="VBoxContainer" type="HBoxContainer" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="Label" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1/VBoxContainer"]
@@ -101,6 +84,7 @@ text = "Enemy 1"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="HP" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel1/VBoxContainer/VBoxContainer"]
 layout_mode = 2
@@ -113,9 +97,11 @@ text = "ARM"
 [node name="EnemyPanel2" type="PanelContainer" parent="BattleRoot/Layout/EnemyRow"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="VBoxContainer" type="HBoxContainer" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="Label" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2/VBoxContainer"]
@@ -124,6 +110,7 @@ text = "Enemy 1"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="HP" type="Label" parent="BattleRoot/Layout/EnemyRow/EnemyPanel2/VBoxContainer/VBoxContainer"]
 layout_mode = 2
@@ -135,26 +122,40 @@ text = "ARM"
 
 [node name="LogRow" type="HBoxContainer" parent="BattleRoot/Layout"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="LogPanel" type="PanelContainer" parent="BattleRoot/Layout/LogRow"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="LogLabel" type="RichTextLabel" parent="BattleRoot/Layout/LogRow"]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
+mouse_filter = 2
 
 [node name="HeroRow" type="HBoxContainer" parent="BattleRoot/Layout"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="HeroPanel1" type="PanelContainer" parent="BattleRoot/Layout/HeroRow"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="HeroPanelLayout" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
+
+[node name="ClassIconBig" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout"]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+stretch_mode = 5
 
 [node name="NameLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout"]
 layout_mode = 2
@@ -164,9 +165,11 @@ text = "Hero 1"
 [node name="Header" type="VBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout"]
 layout_mode = 2
 size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="HpBar" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout/Header" instance=ExtResource("4_58i56")]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="ARMLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout/Header"]
 layout_mode = 2
@@ -175,6 +178,7 @@ text = "5"
 
 [node name="StatusRow" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="StatusLabel" type="Label" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/StatusRow"]
 layout_mode = 2
@@ -182,38 +186,46 @@ text = "Status Effects:"
 
 [node name="StatusIcons" type="HFlowContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/StatusRow"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="HUDRow" type="HBoxContainer" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer"]
 layout_mode = 2
+mouse_filter = 2
 
 [node name="Slot1" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+mouse_filter = 2
 stretch_mode = 5
 
 [node name="Slot2" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+mouse_filter = 2
 stretch_mode = 5
 
 [node name="Slot3" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+mouse_filter = 2
 stretch_mode = 5
 
 [node name="Slot4" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+mouse_filter = 2
 stretch_mode = 5
 
 [node name="Slot5" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+mouse_filter = 2
 stretch_mode = 5
 
 [node name="Slot6" type="TextureRect" parent="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+mouse_filter = 2
 stretch_mode = 5
 
 [node name="HeroPanel2" type="PanelContainer" parent="BattleRoot/Layout/HeroRow"]
@@ -289,23 +301,37 @@ custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 stretch_mode = 5
 
-[node name="LoadoutToBattleBridge" type="Node" parent="." node_paths=PackedStringArray("LoadoutScreen", "BattleRoot", "Slot1", "Slot2", "Slot3", "Slot4", "Slot5", "Slot6", "HUDRow")]
+[node name="RollBtn" type="Button" parent="BattleRoot/Layout"]
+custom_minimum_size = Vector2(120, 32)
+layout_mode = 2
+size_flags_vertical = 4
+text = "ROLL"
+script = ExtResource("4_l7tus")
+PopupSpawnerPath = NodePath("../../RollPopupLayer")
+AnchorControlPath = NodePath("../HeroRow/HeroPanel1")
+DieText = "d6"
+Sides = 6
+CritOnMax = false
+FailOnMin = false
+
+[node name="RollPopupLayer" type="CanvasLayer" parent="BattleRoot"]
+script = ExtResource("4_ppc7m")
+RollPopupScene = ExtResource("5_l7tus")
+
+[node name="LoadoutToBattleBridge" type="Node" parent="." node_paths=PackedStringArray("Slot1", "Slot2", "Slot3", "Slot4", "Slot5", "Slot6", "Hero1ClassPortrait")]
 unique_name_in_owner = true
 script = ExtResource("7_7vkth")
-LoadoutScreen = NodePath("../LoadoutScreen")
-BattleRoot = NodePath("../BattleRoot")
 Slot1 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot1")
 Slot2 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot2")
 Slot3 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot3")
 Slot4 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot4")
 Slot5 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot5")
 Slot6 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot6")
-HUDRow = NodePath("../BattleRoot/HUDLayer/HUDRoot/HudRow1")
+Hero1ClassPortrait = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout/ClassIconBig")
 DefensiveIcon = ExtResource("4_o8ewf")
 UpgradeIcon = ExtResource("5_aob1w")
 
 [node name="LoadoutScreen" parent="." instance=ExtResource("8_o8ewf")]
-visible = false
 layout_mode = 1
 
 [node name="LayoutRoot" parent="LoadoutScreen" index="0"]

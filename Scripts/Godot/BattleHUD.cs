@@ -2,6 +2,7 @@
 #nullable enable
 using Godot;
 using System.Collections.Generic;
+using DiceArena.GodotUI;
 
 namespace RollPG.GodotUI
 {
@@ -172,7 +173,7 @@ namespace RollPG.GodotUI
 			switch (_logBox)
 			{
 				case RichTextLabel rtl:
-					rtl.AppendText(line + "\n");
+					rtl.SafeAppendLine(line + "\n");
 					break;
 				case TextEdit te:
 					te.Text += line + "\n";

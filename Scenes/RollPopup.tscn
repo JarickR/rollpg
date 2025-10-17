@@ -1,0 +1,34 @@
+[gd_scene load_steps=2 format=3 uid="uid://d1etmrap0y04m"]
+
+[ext_resource type="Script" uid="uid://djaupxbfm1jbx" path="res://Scripts/Godot/UI/RollPopup.cs" id="1_s70q6"]
+
+[node name="RollPopup" type="Control"]
+custom_minimum_size = Vector2(120, 80)
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1_s70q6")
+ValueLabelPath = NodePath("TextRoot/ValueLabel")
+DieLabelPath = NodePath("TextRoot/DieLabel")
+IconPath = NodePath("Icon")
+
+[node name="Icon" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+stretch_mode = 5
+
+[node name="TextRoot" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="DieLabel" type="Label" parent="TextRoot"]
+layout_mode = 2
+text = "d20/ATTACK"
+
+[node name="ValueLabel" type="Label" parent="TextRoot"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "3"

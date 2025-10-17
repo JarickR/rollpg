@@ -32,10 +32,14 @@ namespace DiceArena.Godot
 		private Container _tier2Root   = default!;
 		private Container _loadoutRoot = default!;
 
-		// Chosen textures
+		// Chosen visuals
 		private Texture2D? _classPick;
 		private readonly List<Texture2D> _tier1Picks = new();
 		private readonly List<Texture2D> _tier2Picks = new();
+
+		// Chosen class display name (used by bridge to label Hero 1)
+		private string? _className;
+		public string? GetSelectedClassName() => _className;
 
 		// Loadout slot nodes (TextureRect / Button / TextureButton)
 		private readonly List<Control> _loadoutSlots = new();
@@ -168,6 +172,10 @@ namespace DiceArena.Godot
 				return;
 			}
 			_classPick = tex;
+
+			// Store display name (use node name as the label)
+			_className = src.Name;
+
 			GD.Print($"[Click:PlayerLoadoutPanel] class on {src.Name}");
 			UpdateLoadoutVisuals();
 		}

@@ -15,6 +15,10 @@ run/main_scene="uid://dalkd4gr4dlrq"
 config/features=PackedStringArray("4.4", "C#", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+TextEditClampService="*res://Scripts/Godot/UI/TextEditClampService.cs"
+
 [display]
 
 window/size/viewport_width=1920

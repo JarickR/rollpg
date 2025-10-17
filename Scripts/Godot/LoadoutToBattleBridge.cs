@@ -1,191 +1,152 @@
 // res://Scripts/Godot/LoadoutToBattleBridge.cs
 #nullable enable
+using Godot;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
+using DiceArena.Godot; // for PlayerLoadoutPanel
 
-namespace DiceArena.Godot
+namespace RollPG.GodotUI
 {
-	/// <summary>
-	/// Bridges Loadout -> Battle:
-	/// • Starts in Loadout (Battle hidden + ignoring input).
-	/// • On Finalize, paints 6 HUD slots and shows Battle.
-	/// Diagnostics prints help you see what's wired and what's painted.
-	/// </summary>
 	public partial class LoadoutToBattleBridge : Node
 	{
-		// ---------- Wire these in the Inspector ----------
-		[ExportGroup("Screens")]
-		[Export] public Control LoadoutScreen { get; set; } = default!;
-		[Export] public Control BattleRoot    { get; set; } = default!;
+		[ExportGroup("Scene Roots")]
+		[Export] public NodePath LoadoutScreenPath { get; set; } = "../LoadoutScreen";
+		[Export] public NodePath BattleRootPath    { get; set; } = "../BattleRoot";
 
-		[ExportGroup("HUD (choose ONE approach)")]
-		// EITHER: set these six directly...
-		[Export] public TextureRect? Slot1 { get; set; }    // Class
-		[Export] public TextureRect? Slot2 { get; set; }    // Spells/Def
+		[ExportGroup("Hero 1 HUD Slots (small)")]
+		[Export] public TextureRect? Slot1 { get; set; }
+		[Export] public TextureRect? Slot2 { get; set; }
 		[Export] public TextureRect? Slot3 { get; set; }
 		[Export] public TextureRect? Slot4 { get; set; }
 		[Export] public TextureRect? Slot5 { get; set; }
-		[Export] public TextureRect? Slot6 { get; set; }    // Upgrade
-		// OR: set HUDRow and ensure it has children named Slot1..Slot6
-		[Export] public HBoxContainer? HUDRow { get; set; }
+		[Export] public TextureRect? Slot6 { get; set; }
 
-		[ExportGroup("Icons")]
-		[Export] public Texture2D DefensiveIcon { get; set; } = default!;
-		[Export] public Texture2D UpgradeIcon   { get; set; } = default!;
+		[ExportGroup("Hero 1 Large Portrait")]
+		[Export] public TextureRect? Hero1ClassPortrait { get; set; }
 
-		// Cached resolved slots
-		private TextureRect?[] _slots = new TextureRect?[6];
+		[ExportGroup("Fallback Icons (optional)")]
+		// If you leave these null, the bridge will keep whatever textures are already on Slot5/Slot6.
+		[Export] public Texture2D? DefensiveIcon { get; set; }
+		[Export] public Texture2D? UpgradeIcon   { get; set; }
+
+		// ---- runtime ----
+		private Control _loadout = null!;
+		private Control _battle  = null!;
 
 		public override void _Ready()
 		{
-			if (LoadoutScreen == null || BattleRoot == null)
-			{
-				GD.PushError("[Bridge] LoadoutScreen / BattleRoot are not assigned.");
-				return;
-			}
+			_loadout = GetNode<Control>(LoadoutScreenPath);
+			_battle  = GetNode<Control>(BattleRootPath);
 
-			ResolveSlots();
-			ShowLoadout(); // battle hidden at start
+			// Start in LOADOUT (battle hidden)
+			SetBattleVisible(false);
+			SetLoadoutVisible(true);
+
+			GD.Print("[Bridge] State=LOADOUT (battle hidden).");
 		}
 
-		// Called by LoadoutScreen with currently visible panels & party size
-		public void FinalizeToBattle(List<PlayerLoadoutPanel> panels, int partySize)
+		// Called by LoadoutScreen when Finalize is pressed
+		public void FinalizeToBattle(List<PlayerLoadoutPanel> panels, int activeCount)
 		{
 			if (panels == null || panels.Count == 0)
 			{
-				GD.PushWarning("[Bridge] FinalizeToBattle: no panels passed.");
+				GD.PushWarning("[Bridge] Finalize: no panels provided.");
 				return;
 			}
 
-			// Take P1’s picks for now
+			// For now we only paint Hero 1 from panel 0 (you can extend to others later).
 			var p1 = panels[0];
-			p1.GetChosenTextures(out var classIcon, out var t1, out var t2);
 
-			// Compose spells list (T1 then T2; add T3 here in future)
-			var spells = new List<Texture2D>(t1);
-			spells.AddRange(t2);
+			p1.GetChosenTextures(out var classIcon, out var tier1, out var tier2);
 
-			GD.Print($"[Bridge] Finalize: class={(classIcon!=null ? classIcon.ResourcePath : "NULL")}, " +
-					 $"t1={t1.Count}, t2={t2.Count}");
+			// Build the six small HUD slot textures (class, four action slots, upgrade).
+			var slotTextures = BuildSixTextures(classIcon, tier1, tier2);
 
-			PaintSixSlots(classIcon, spells);
-			ShowBattle();
-		}
+			// Paint small HUD
+			var targets = new[] { Slot1, Slot2, Slot3, Slot4, Slot5, Slot6 };
+			for (int i = 0; i < targets.Length; i++)
+			{
+				if (targets[i] is TextureRect tr && slotTextures[i] != null)
+					tr.Texture = slotTextures[i];
+			}
 
-		// ---------------- Internal helpers ----------------
-		private void ShowLoadout()
-		{
-			// Loadout visible / interactive
-			LoadoutScreen.Visible = true;
-			LoadoutScreen.ProcessMode = ProcessModeEnum.Inherit;
-			SetMouseFilterRecursive(LoadoutScreen, Control.MouseFilterEnum.Stop);
+			// Paint the large portrait in Hero 1 header
+			if (Hero1ClassPortrait != null)
+				Hero1ClassPortrait.Texture = classIcon;
 
-			// Battle hidden / ignores input
-			BattleRoot.Visible = false;
-			BattleRoot.ProcessMode = ProcessModeEnum.Disabled;
-			SetMouseFilterRecursive(BattleRoot, Control.MouseFilterEnum.Ignore);
+			GD.Print($"[Bridge] Finalize: class={classIcon?.ResourcePath ?? "null"}, " +
+				$"t1={tier1.Count}, t2={tier2.Count}");
 
-			GD.Print("[Bridge] State=LOADOUT (battle hidden & ignoring input).");
-		}
-
-		private void ShowBattle()
-		{
-			LoadoutScreen.Visible = false;
-			LoadoutScreen.ProcessMode = ProcessModeEnum.Disabled;
-
-			BattleRoot.Visible = true;
-			BattleRoot.ProcessMode = ProcessModeEnum.Inherit;
-			// Keep HUD non-interactive; change to Pass/Stop if you add battle buttons later.
-			SetMouseFilterRecursive(BattleRoot, Control.MouseFilterEnum.Ignore);
-
+			// Switch visibility
+			SetLoadoutVisible(false);
+			SetBattleVisible(true);
 			GD.Print("[Bridge] State=BATTLE (battle visible).");
 		}
 
-		private static void SetMouseFilterRecursive(Node node, Control.MouseFilterEnum filter)
-		{
-			if (node is Control c) c.MouseFilter = filter;
-			foreach (var child in node.GetChildren())
-				SetMouseFilterRecursive(child, filter);
-		}
+		// ================= helpers =================
 
-		private void ResolveSlots()
+		private Texture2D?[] BuildSixTextures(Texture2D? classIcon, List<Texture2D> t1, List<Texture2D> t2)
 		{
-			// Preferred: use the six direct exports if all are assigned
-			var direct = new[] { Slot1, Slot2, Slot3, Slot4, Slot5, Slot6 };
-			bool allDirect = direct.All(s => s != null);
+			// Slot 1: class
+			// Slots 2..5: spells and/or defensive icon filler
+			// Slot 6: upgrade
+			var result = new Texture2D?[6];
 
-			if (allDirect)
+			result[0] = classIcon;
+
+			// Gather up to four actions from tier1 first, then tier2.
+			var actions = new List<Texture2D>(4);
+			foreach (var t in t1)
 			{
-				_slots = direct!;
-				GD.Print("[Bridge] HUD slots resolved via direct exports (Slot1..Slot6).");
-				LogSlotNames();
-				return;
+				if (actions.Count >= 4) break;
+				actions.Add(t);
+			}
+			foreach (var t in t2)
+			{
+				if (actions.Count >= 4) break;
+				actions.Add(t);
 			}
 
-			// Fallback: resolve from HUDRow by child name "Slot#"
-			if (HUDRow == null)
-			{
-				GD.PushWarning("[Bridge] Neither Slot1..Slot6 nor HUDRow assigned. Painting will be blank.");
-				_slots = new TextureRect?[6];
-				return;
-			}
+			// Fill remaining action slots with defensive icon fallback (if provided),
+			// otherwise keep whatever is already on the TextureRect.
+			while (actions.Count < 4 && DefensiveIcon != null)
+				actions.Add(DefensiveIcon);
 
-			for (int i = 0; i < 6; i++)
-			{
-				var path = $"Slot{i + 1}";
-				_slots[i] = HUDRow.GetNodeOrNull<TextureRect>(path);
-				if (_slots[i] == null)
-					GD.PushWarning($"[Bridge] Missing child TextureRect: {HUDRow.Name}/{path}");
-			}
+			// Assign actions into slots 2..5
+			for (int i = 0; i < 4; i++)
+				result[1 + i] = i < actions.Count ? actions[i] : GetExistingTextureForSlot(1 + i);
 
-			GD.Print("[Bridge] HUD slots resolved via HUDRow children.");
-			LogSlotNames();
+			// Slot 6: upgrade (fallback to existing texture if not provided)
+			result[5] = UpgradeIcon ?? GetExistingTextureForSlot(5);
+
+			return result;
 		}
 
-		private void LogSlotNames()
+		private Texture2D? GetExistingTextureForSlot(int index)
 		{
-			for (int i = 0; i < 6; i++)
+			switch (index)
 			{
-				var name = _slots[i]?.GetPath().ToString() ?? "NULL";
-				GD.Print($"[Bridge] Slot{i + 1} -> {name}");
+				case 0: return Slot1?.Texture;
+				case 1: return Slot2?.Texture;
+				case 2: return Slot3?.Texture;
+				case 3: return Slot4?.Texture;
+				case 4: return Slot5?.Texture;
+				case 5: return Slot6?.Texture;
 			}
+			return null;
 		}
 
-		private void PaintSixSlots(Texture2D? classIcon, List<Texture2D> spells)
+		private void SetLoadoutVisible(bool v)
 		{
-			// Defensive baseline (so you see something even if picks are empty)
-			for (int i = 0; i < 5; i++)
-				SetSlot(i, DefensiveIcon);
-			SetSlot(5, UpgradeIcon);
-
-			// Slot 1 = class
-			SetSlot(0, classIcon);
-
-			// Fill slots 2..5 with spells left→right
-			int cursor = 1; // indexes 1..4
-			for (int i = 0; i < spells.Count && cursor <= 4; i++)
-				SetSlot(cursor++, spells[i]);
-
-			// Diagnostics
-			GD.Print($"[Bridge] Painted: S1={TexName(_slots[0])}, " +
-					 $"S2={TexName(_slots[1])}, S3={TexName(_slots[2])}, " +
-					 $"S4={TexName(_slots[3])}, S5={TexName(_slots[4])}, S6={TexName(_slots[5])}");
+			_loadout.Visible = v;
+			_loadout.ProcessMode = v ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
 		}
 
-		private void SetSlot(int index, Texture2D? tex)
+		private void SetBattleVisible(bool v)
 		{
-			if (index < 0 || index >= _slots.Length) return;
-			var slot = _slots[index];
-			if (slot == null)
-			{
-				GD.PushWarning($"[Bridge] Slot{index + 1} is NULL; cannot set texture.");
-				return;
-			}
-			slot.Texture = tex;
+			_battle.Visible = v;
+			_battle.ProcessMode = v ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
 		}
-
-		private static string TexName(TextureRect? tr)
-			=> tr?.Texture is Texture2D t ? t.ResourcePath : "NULL";
 	}
 }
