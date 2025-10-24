@@ -4,149 +4,179 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DiceArena.Godot; // for PlayerLoadoutPanel
 
-namespace RollPG.GodotUI
+namespace DiceArena.Godot
 {
 	public partial class LoadoutToBattleBridge : Node
 	{
-		[ExportGroup("Scene Roots")]
-		[Export] public NodePath LoadoutScreenPath { get; set; } = "../LoadoutScreen";
-		[Export] public NodePath BattleRootPath    { get; set; } = "../BattleRoot";
+		[Export] public NodePath LoadoutScreenPath { get; set; } = "LoadoutScreen";
+		[Export] public NodePath BattleRootPath    { get; set; } = "BattleRoot";
 
-		[ExportGroup("Hero 1 HUD Slots (small)")]
-		[Export] public TextureRect? Slot1 { get; set; }
-		[Export] public TextureRect? Slot2 { get; set; }
-		[Export] public TextureRect? Slot3 { get; set; }
-		[Export] public TextureRect? Slot4 { get; set; }
-		[Export] public TextureRect? Slot5 { get; set; }
-		[Export] public TextureRect? Slot6 { get; set; }
+		[Export] public NodePath HUDSlot0Path { get; set; } = "BattleRoot/HUDLayer/HUDRow/Slot1";
+		[Export] public NodePath HUDSlot1Path { get; set; } = "BattleRoot/HUDLayer/HUDRow/Slot2";
+		[Export] public NodePath HUDSlot2Path { get; set; } = "BattleRoot/HUDLayer/HUDRow/Slot3";
+		[Export] public NodePath HUDSlot3Path { get; set; } = "BattleRoot/HUDLayer/HUDRow/Slot4";
+		[Export] public NodePath HUDSlot4Path { get; set; } = "BattleRoot/HUDLayer/HUDRow/Slot5";
+		[Export] public NodePath HUDSlot5Path { get; set; } = "BattleRoot/HUDLayer/HUDRow/Slot6";
 
-		[ExportGroup("Hero 1 Large Portrait")]
-		[Export] public TextureRect? Hero1ClassPortrait { get; set; }
+		// Dice / overlay references
+		[Export] public NodePath? DiceOverlayPath    { get; set; } = "DiceOverlay"; // NEW: direct overlay control
+		[Export] public NodePath? Dice3DPath         { get; set; } = "DiceOverlay/DiceViewport/DiceWorld/Dice3d";
+		[Export] public NodePath? DiceInteractorPath { get; set; } = "DiceOverlay"; // node with DiceInteractor
+		[Export] public NodePath? DiceDockCardP1Path { get; set; } = null;
 
-		[ExportGroup("Fallback Icons (optional)")]
-		// If you leave these null, the bridge will keep whatever textures are already on Slot5/Slot6.
-		[Export] public Texture2D? DefensiveIcon { get; set; }
-		[Export] public Texture2D? UpgradeIcon   { get; set; }
+		[Export] public Texture2D? UpgradeIcon  { get; set; }
+		[Export] public Texture2D? FallbackIcon { get; set; }
 
-		// ---- runtime ----
-		private Control _loadout = null!;
-		private Control _battle  = null!;
+		private Control    _loadout   = default!;
+		private CanvasItem _battleRoot= default!;
+		private readonly List<Control> _hudSlots = new();
+
+		private Control?        _diceOverlay;      // NEW
+		private Dice3D?         _dice;
+		private DiceInteractor? _diceInteractor;
 
 		public override void _Ready()
 		{
-			_loadout = GetNode<Control>(LoadoutScreenPath);
-			_battle  = GetNode<Control>(BattleRootPath);
+			_loadout     = GetNode<Control>(LoadoutScreenPath);
+			_battleRoot  = GetNode<CanvasItem>(BattleRootPath);
 
-			// Start in LOADOUT (battle hidden)
-			SetBattleVisible(false);
-			SetLoadoutVisible(true);
+			_hudSlots.Clear();
+			_hudSlots.Add(Require<Control>(HUDSlot0Path));
+			_hudSlots.Add(Require<Control>(HUDSlot1Path));
+			_hudSlots.Add(Require<Control>(HUDSlot2Path));
+			_hudSlots.Add(Require<Control>(HUDSlot3Path));
+			_hudSlots.Add(Require<Control>(HUDSlot4Path));
+			_hudSlots.Add(Require<Control>(HUDSlot5Path));
+
+			_diceOverlay    = GetNodeOrNull<Control>(DiceOverlayPath ?? "");
+			_dice           = GetNodeOrNull<Dice3D>(Dice3DPath ?? "");
+			_diceInteractor = GetNodeOrNull<DiceInteractor>(DiceInteractorPath ?? "");
+
+			// Force overlay hidden on Loadout (and non-blocking), regardless of interactor.
+			_diceInteractor?.EnableDice(false);
+			SetDiceOverlayVisible(false);             // <— NEW hard toggle
+			CallDeferred(nameof(HideDiceOverlayDeferred));
+
+			ShowLoadout();
+		}
+
+		private void HideDiceOverlayDeferred()
+		{
+			_diceInteractor?.EnableDice(false);
+			SetDiceOverlayVisible(false);             // <— NEW
+		}
+
+		// Hard toggle overlay visibility + input blocking in one place
+		private void SetDiceOverlayVisible(bool on)
+		{
+			if (_diceOverlay == null) return;
+			_diceOverlay.Visible      = on;
+			_diceOverlay.MouseFilter  = on ? Control.MouseFilterEnum.Stop : Control.MouseFilterEnum.Ignore;
+			_diceOverlay.ProcessMode  = on ? ProcessModeEnum.Inherit     : ProcessModeEnum.Disabled;
+		}
+
+		// ---------- Compatibility overloads ----------
+		public void FinalizeToBattle(PlayerLoadoutPanel panel)
+		{
+			panel.GetChosenTextures(out var cls, out var t1, out var t2);
+			FinalizeToBattle(cls, t1, t2);
+		}
+		public void FinalizeToBattle(Texture2D? classIcon)
+			=> FinalizeToBattle(classIcon, new List<Texture2D>(), new List<Texture2D>());
+		public void FinalizeToBattle(Texture2D? classIcon, List<Texture2D> tier1)
+			=> FinalizeToBattle(classIcon, tier1, new List<Texture2D>());
+
+		// -------------- Primary method --------------
+		public void FinalizeToBattle(Texture2D? classIcon, List<Texture2D>? tier1, List<Texture2D>? tier2)
+		{
+			tier1 ??= new List<Texture2D>();
+			tier2 ??= new List<Texture2D>();
+
+			GD.Print($"[Bridge] Finalize: class={(classIcon as Resource)?.ResourcePath}, t1={tier1.Count}, t2={tier2.Count}");
+
+			var mid = new List<Texture2D>(4);
+			void TryAdd(Texture2D? tx) { if (tx != null && mid.Count < 4) mid.Add(tx); }
+			foreach (var t in tier1) TryAdd(t);
+			foreach (var t in tier2) TryAdd(t);
+			while (mid.Count < 4) TryAdd(FallbackIcon ?? UpgradeIcon ?? classIcon ?? tier1.FirstOrDefault() ?? tier2.FirstOrDefault());
+
+			SetControlTexture(_hudSlots[0], classIcon ?? FallbackIcon);
+			for (int i = 0; i < 4; i++) SetControlTexture(_hudSlots[1 + i], mid[i]);
+			SetControlTexture(_hudSlots[5], UpgradeIcon ?? FallbackIcon);
+
+			if (_dice != null)
+			{
+				try
+				{
+					_dice.ApplyLoadoutFaces(
+						classIcon:      classIcon ?? FallbackIcon ?? mid[0],
+						slotIcons1to4:  mid,
+						upgradeIcon:    UpgradeIcon ?? FallbackIcon ?? mid[0],
+						fallback:       FallbackIcon
+					);
+				}
+				catch (Exception ex) { GD.PushWarning($"[Bridge] Dice paint failed: {ex.Message}"); }
+			}
+
+			ShowBattle();
+
+			if (_diceInteractor != null && DiceDockCardP1Path is { } np)
+			{
+				var card = GetNodeOrNull<Control>(np);
+				if (card != null)
+					_diceInteractor.AppearUnderCard(card, 8);
+			}
+		}
+
+		private void ShowLoadout()
+		{
+			_loadout.Visible = true;
+			_loadout.ProcessMode = ProcessModeEnum.Inherit;
+
+			_battleRoot.Visible = false;
+			_battleRoot.ProcessMode = ProcessModeEnum.Disabled;
+
+			_diceInteractor?.EnableDice(false);
+			SetDiceOverlayVisible(false); // NEW
 
 			GD.Print("[Bridge] State=LOADOUT (battle hidden).");
 		}
 
-		// Called by LoadoutScreen when Finalize is pressed
-		public void FinalizeToBattle(List<PlayerLoadoutPanel> panels, int activeCount)
+		private void ShowBattle()
 		{
-			if (panels == null || panels.Count == 0)
-			{
-				GD.PushWarning("[Bridge] Finalize: no panels provided.");
-				return;
-			}
+			_loadout.Visible = false;
+			_loadout.ProcessMode = ProcessModeEnum.Disabled;
 
-			// For now we only paint Hero 1 from panel 0 (you can extend to others later).
-			var p1 = panels[0];
+			_battleRoot.Visible = true;
+			_battleRoot.ProcessMode = ProcessModeEnum.Inherit;
 
-			p1.GetChosenTextures(out var classIcon, out var tier1, out var tier2);
+			_diceInteractor?.EnableDice(true);
+			SetDiceOverlayVisible(true); // NEW
 
-			// Build the six small HUD slot textures (class, four action slots, upgrade).
-			var slotTextures = BuildSixTextures(classIcon, tier1, tier2);
-
-			// Paint small HUD
-			var targets = new[] { Slot1, Slot2, Slot3, Slot4, Slot5, Slot6 };
-			for (int i = 0; i < targets.Length; i++)
-			{
-				if (targets[i] is TextureRect tr && slotTextures[i] != null)
-					tr.Texture = slotTextures[i];
-			}
-
-			// Paint the large portrait in Hero 1 header
-			if (Hero1ClassPortrait != null)
-				Hero1ClassPortrait.Texture = classIcon;
-
-			GD.Print($"[Bridge] Finalize: class={classIcon?.ResourcePath ?? "null"}, " +
-				$"t1={tier1.Count}, t2={tier2.Count}");
-
-			// Switch visibility
-			SetLoadoutVisible(false);
-			SetBattleVisible(true);
 			GD.Print("[Bridge] State=BATTLE (battle visible).");
 		}
 
-		// ================= helpers =================
-
-		private Texture2D?[] BuildSixTextures(Texture2D? classIcon, List<Texture2D> t1, List<Texture2D> t2)
+		private T Require<T>(NodePath path) where T : class
 		{
-			// Slot 1: class
-			// Slots 2..5: spells and/or defensive icon filler
-			// Slot 6: upgrade
-			var result = new Texture2D?[6];
-
-			result[0] = classIcon;
-
-			// Gather up to four actions from tier1 first, then tier2.
-			var actions = new List<Texture2D>(4);
-			foreach (var t in t1)
-			{
-				if (actions.Count >= 4) break;
-				actions.Add(t);
-			}
-			foreach (var t in t2)
-			{
-				if (actions.Count >= 4) break;
-				actions.Add(t);
-			}
-
-			// Fill remaining action slots with defensive icon fallback (if provided),
-			// otherwise keep whatever is already on the TextureRect.
-			while (actions.Count < 4 && DefensiveIcon != null)
-				actions.Add(DefensiveIcon);
-
-			// Assign actions into slots 2..5
-			for (int i = 0; i < 4; i++)
-				result[1 + i] = i < actions.Count ? actions[i] : GetExistingTextureForSlot(1 + i);
-
-			// Slot 6: upgrade (fallback to existing texture if not provided)
-			result[5] = UpgradeIcon ?? GetExistingTextureForSlot(5);
-
-			return result;
+			var n = GetNodeOrNull<T>(path);
+			if (n == null) throw new Exception($"Node not found: '{path}'");
+			return n;
 		}
 
-		private Texture2D? GetExistingTextureForSlot(int index)
+		private static void SetControlTexture(Control c, Texture2D? tex)
 		{
-			switch (index)
+			if (c == null || tex == null) return;
+			switch (c)
 			{
-				case 0: return Slot1?.Texture;
-				case 1: return Slot2?.Texture;
-				case 2: return Slot3?.Texture;
-				case 3: return Slot4?.Texture;
-				case 4: return Slot5?.Texture;
-				case 5: return Slot6?.Texture;
+				case TextureRect tr:   tr.Texture = tex; break;
+				case TextureButton tb: tb.TextureNormal = tex; break;
+				case Button b:         b.Icon = tex; break;
+				default:
+					var tr2 = c.GetNodeOrNull<TextureRect>("TextureRect");
+					if (tr2 != null) tr2.Texture = tex;
+					break;
 			}
-			return null;
-		}
-
-		private void SetLoadoutVisible(bool v)
-		{
-			_loadout.Visible = v;
-			_loadout.ProcessMode = v ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
-		}
-
-		private void SetBattleVisible(bool v)
-		{
-			_battle.Visible = v;
-			_battle.ProcessMode = v ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
 		}
 	}
 }

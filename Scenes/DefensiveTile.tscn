@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://cedfy1moklbi4" path="res://Content/Icons/DefensiveIcon.png" id="1_jwphl"]
 
 [node name="DefensiveTile" type="TextureRect"]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(32, 32)
 offset_right = 206.0
 offset_bottom = 72.0
 size_flags_horizontal = 4

@@ -1,0 +1,52 @@
+[gd_scene load_steps=4 format=3 uid="uid://cf8fn01i5w0t5"]
+
+[ext_resource type="Script" uid="uid://c1vtvr1rrms3f" path="res://Scripts/Godot/Dice3D.cs" id="1_3hycw"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_uo1ct"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_w65vv"]
+
+[node name="Dice3d" type="RigidBody3D"]
+script = ExtResource("1_3hycw")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_uo1ct")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_w65vv")
+
+[node name="FaceUp" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.51, 0)
+pixel_size = 0.005
+transparent = false
+double_sided = false
+
+[node name="FaceDown" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -1, 8.74228e-08, 0, -8.74228e-08, -1, 0, -0.51, 0)
+pixel_size = 0.005
+transparent = false
+double_sided = false
+
+[node name="FaceLeft" type="Sprite3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, -0.51, 0, 0)
+pixel_size = 0.005
+transparent = false
+double_sided = false
+
+[node name="FaceRight" type="Sprite3D" parent="."]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 0.51, 0, 0)
+pixel_size = 0.005
+transparent = false
+double_sided = false
+
+[node name="FaceFront" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.51)
+pixel_size = 0.005
+transparent = false
+double_sided = false
+
+[node name="FaceBack" type="Sprite3D" parent="."]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, 0.51)
+pixel_size = 0.005
+transparent = false
+double_sided = false

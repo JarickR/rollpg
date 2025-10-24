@@ -1,0 +1,31 @@
+[gd_scene load_steps=2 format=3 uid="uid://cp1se3jogq80o"]
+
+[ext_resource type="Script" uid="uid://3uqw1sxh8my0" path="res://Scripts/Godot/UI/DiceRollPopup.cs" id="1_fnke0"]
+
+[node name="DiceRollPopup" type="Control" node_paths=PackedStringArray("Face", "ValueLabel")]
+z_index = 200
+layout_mode = 3
+anchors_preset = 0
+size_flags_horizontal = 3
+mouse_filter = 2
+script = ExtResource("1_fnke0")
+Face = NodePath("Panel/HBoxContainer/Face")
+ValueLabel = NodePath("Panel/HBoxContainer/ValueLabel")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Face" type="TextureRect" parent="Panel/HBoxContainer"]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="ValueLabel" type="Label" parent="Panel/HBoxContainer"]
+layout_mode = 2

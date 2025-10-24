@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://1vbsusm8xvol"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pbjfr"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_20bam"]
+
+[node name="DiceTable3d" type="Node3D"]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_pbjfr")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_20bam")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.426932, 0.904284, 0, -0.904284, 0.426932, 0, 1.39233, 0.947902)

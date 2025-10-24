@@ -1,30 +1,51 @@
 // res://Scripts/Godot/UI/TextEditClampService.cs
 #nullable enable
 using Godot;
+using System.Collections.Generic;
 
 namespace DiceArena.GodotUI
 {
 	/// <summary>
-	/// Autoload this singleton to guard ALL TextEdits in the tree.
-	/// It hooks TextChanged/VisibilityChanged and clamps caret/scroll to valid ranges.
-	/// This eliminates "Index p_line = -1" errors project-wide.
+	/// Autoload this singleton to guard ALL TextEdits in the game.
+	/// It tracks every TextEdit (current and future), clamps caret/scroll
+	/// on TextChanged, VisibilityChanged, and once per frame.
+	/// This eliminates "Index p_line = -1 is out of bounds" spam permanently.
 	/// </summary>
 	public partial class TextEditClampService : Node
 	{
+		private readonly HashSet<TextEdit> _tracked = new();
+
+		// Meta flag to ensure we hook a TextEdit exactly once.
+		private const string MetaKey = "__clamp_attached__";
+
 		public override void _EnterTree()
 		{
-			// Hook for nodes added later
-			GetTree().NodeAdded += OnNodeAdded;
+			var tree = GetTree();
+			tree.NodeAdded += OnNodeAdded;
 
-			// Attach to any TextEdits that already exist
-			if (GetTree().Root != null)
-				AttachRecursively(GetTree().Root);
+			// Attach to existing nodes in the tree
+			if (tree.Root != null)
+				AttachRecursively(tree.Root);
 		}
 
 		public override void _ExitTree()
 		{
+			// Just stop tracking; nodes may outlive this autoload only in editor.
 			GetTree().NodeAdded -= OnNodeAdded;
+			_tracked.Clear();
 		}
+
+		public override void _Process(double delta)
+		{
+			// Prune invalid references safely (fixes nullable issues).
+			_tracked.RemoveWhere(static te => te == null || !GodotObject.IsInstanceValid(te));
+
+			// Clamp every frame to catch any external misuse reliably.
+			foreach (var te in _tracked)
+				ClampCaretAndScroll(te);
+		}
+
+		// ---- Tracking & connections ----
 
 		private void OnNodeAdded(Node n)
 		{
@@ -43,27 +64,28 @@ namespace DiceArena.GodotUI
 
 		private void Attach(TextEdit te)
 		{
-			// Avoid double-connecting by disconnecting first (no-op if not connected)
-			te.TextChanged -= () => OnTextChanged(te);
-			te.VisibilityChanged -= () => OnVisibilityChanged(te);
+			if (te == null || !GodotObject.IsInstanceValid(te))
+				return;
 
-			te.TextChanged += () => OnTextChanged(te);
-			te.VisibilityChanged += () => OnVisibilityChanged(te);
+			// Ensure we only hook once per TextEdit
+			if (te.HasMeta(MetaKey))
+				return;
 
-			// Initial clamp just in case
+			te.SetMeta(MetaKey, true);
+			_tracked.Add(te);
+
+			// Subscribe with per-instance lambdas; no need to unsubscribe explicitly.
+			te.TextChanged += () => ClampCaretAndScroll(te);
+			te.VisibilityChanged += () =>
+			{
+				if (te.Visible) ClampCaretAndScroll(te);
+			};
+
+			// Initial clamp
 			ClampCaretAndScroll(te);
 		}
 
-		private void OnTextChanged(TextEdit te)
-		{
-			ClampCaretAndScroll(te);
-		}
-
-		private void OnVisibilityChanged(TextEdit te)
-		{
-			if (te.Visible)
-				ClampCaretAndScroll(te);
-		}
+		// ---- Core clamp ----
 
 		/// <summary>
 		/// Safely positions the caret at the end and scrolls to bottom.
@@ -74,7 +96,7 @@ namespace DiceArena.GodotUI
 			if (te == null || !GodotObject.IsInstanceValid(te))
 				return;
 
-			// Godot TextEdit should always have at least 1 line, but guard anyway.
+			// Godot TextEdit typically has at least 1 line; guard anyway.
 			int lineCount = te.GetLineCount();
 			if (lineCount <= 0)
 			{
@@ -85,15 +107,13 @@ namespace DiceArena.GodotUI
 			}
 
 			int lastLine = lineCount - 1;
-
-			// GetLine(lastLine) can be empty; Length is safe.
 			int lastLen = te.GetLine(lastLine).Length;
 
 			// Clamp caret
 			te.SetCaretLine(lastLine);
 			te.SetCaretColumn(lastLen);
 
-			// Scroll to bottom (lines are the unit)
+			// Scroll to bottom (TextEdit uses lines for ScrollVertical)
 			te.ScrollVertical = lastLine;
 		}
 	}

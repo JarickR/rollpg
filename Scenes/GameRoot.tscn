@@ -1,18 +1,68 @@
-[gd_scene load_steps=14 format=3 uid="uid://dalkd4gr4dlrq"]
+[gd_scene load_steps=30 format=3 uid="uid://dalkd4gr4dlrq"]
 
 [ext_resource type="Script" uid="uid://dveyfoinsfkbe" path="res://Scripts/Godot/Game.cs" id="1"]
 [ext_resource type="Script" uid="uid://ejg081jx0w6i" path="res://Scripts/Godot/BattleRoot.cs" id="2_vt32t"]
-[ext_resource type="Script" uid="uid://bbssubg6gnpyc" path="res://Scripts/Godot/UI/TextEditCaretGuard.cs" id="3_ffosx"]
 [ext_resource type="PackedScene" uid="uid://ri28ks3ndpg3" path="res://Scenes/HPBar.tscn" id="4_58i56"]
-[ext_resource type="Script" uid="uid://55v6vsget2xt" path="res://Scripts/Godot/UI/RollButtonController.cs" id="4_l7tus"]
+[ext_resource type="Script" uid="uid://bf5lcyyyqvm1a" path="res://Scenes/DiceInteractor.cs" id="4_fgjt8"]
+[ext_resource type="Script" uid="uid://dwyp7b8syh8ve" path="res://Scenes/DiceOverlay.cs" id="4_hopnb"]
+[ext_resource type="Script" uid="uid://cw3b8jlbg5fa4" path="res://Scripts/Godot/BattleLogPanel.cs" id="4_n0qs2"]
 [ext_resource type="Texture2D" uid="uid://cedfy1moklbi4" path="res://Content/Icons/DefensiveIcon.png" id="4_o8ewf"]
 [ext_resource type="Script" uid="uid://woaa4qt3pt5d" path="res://Scripts/Godot/UI/RollPopupSpawner.cs" id="4_ppc7m"]
 [ext_resource type="Texture2D" uid="uid://dswtic4py86sq" path="res://Content/Icons/UpgradeIcon.png" id="5_aob1w"]
-[ext_resource type="PackedScene" uid="uid://d1etmrap0y04m" path="res://Scenes/RollPopup.tscn" id="5_l7tus"]
+[ext_resource type="Script" uid="uid://bynod2govtxds" path="res://Scripts/Godot/EdgeFrame3D.cs" id="6_hopnb"]
 [ext_resource type="Script" uid="uid://emvjb148wv62" path="res://Scripts/Godot/LoadoutToBattleBridge.cs" id="7_7vkth"]
+[ext_resource type="PackedScene" uid="uid://cp1se3jogq80o" path="res://Scenes/DiceRollPopup.tscn" id="7_ffosx"]
 [ext_resource type="PackedScene" uid="uid://djwyy84baep1n" path="res://Scenes/LoadoutScreen.tscn" id="8_o8ewf"]
-[ext_resource type="PackedScene" uid="uid://yyf8aq04mcur" path="res://Scenes/UpgradeTile.tscn" id="9_58i56"]
-[ext_resource type="PackedScene" uid="uid://coig18xlcwjcp" path="res://Scenes/DefensiveTile.tscn" id="10_ppc7m"]
+[ext_resource type="PackedScene" uid="uid://cf8fn01i5w0t5" path="res://Scenes/Dice3D.tscn" id="15_hopnb"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_n0qs2"]
+friction = 0.9
+bounce = 0.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fgjt8"]
+shading_mode = 0
+diffuse_mode = 3
+specular_mode = 1
+albedo_color = Color(0, 0, 0, 1)
+texture_filter = 0
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rkc8x"]
+size = Vector3(46.0796, 0.2, 25.5328)
+
+[sub_resource type="BoxMesh" id="BoxMesh_bm5eo"]
+size = Vector3(30, 0.1, 20)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_tx0v2"]
+size = Vector3(0.1, 20, 30.596)
+
+[sub_resource type="BoxMesh" id="BoxMesh_fgjt8"]
+size = Vector3(0.1, 5, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qvhcr"]
+size = Vector3(0.1, 20, 30.668)
+
+[sub_resource type="BoxMesh" id="BoxMesh_hopnb"]
+size = Vector3(0.1, 5, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3815q"]
+size = Vector3(46.959, 20, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_r8qb4"]
+size = Vector3(34.446, 5, 0.1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4eu3u"]
+size = Vector3(45.949, 20, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_rkc8x"]
+size = Vector3(34.446, 5, 0.1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fgjt8"]
+size = Vector3(44.3771, 1, 26.4463)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_fgjt8"]
+radius = 0.05
+
+[sub_resource type="BoxMesh" id="BoxMesh_tx0v2"]
 
 [node name="GameRoot" type="Control"]
 z_index = 100
@@ -22,13 +72,12 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
 mouse_filter = 2
 script = ExtResource("1")
 
 [node name="BattleRoot" type="Control" parent="."]
 unique_name_in_owner = true
+z_index = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -37,8 +86,175 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("2_vt32t")
+ClassIconPath = NodePath("../LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer")
+T1IconPath = NodePath("../LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer")
+T2IconPath = NodePath("../LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer")
+
+[node name="DiceInteractorHost" type="Node" parent="BattleRoot"]
+script = ExtResource("4_fgjt8")
+DicePath = NodePath("DiceOverlay/DiceViewport/DiceWorld")
+DefaultDockCardPath = NodePath("../DiceDock")
+RequireRayHitToDrag = false
+VerboseLogs = true
+
+[node name="DiceOverlay" type="SubViewportContainer" parent="BattleRoot/DiceInteractorHost"]
+top_level = true
+z_index = 1000
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("4_hopnb")
+
+[node name="DiceViewport" type="SubViewport" parent="BattleRoot/DiceInteractorHost/DiceOverlay"]
+process_mode = 3
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(1280, 720)
+render_target_update_mode = 4
+
+[node name="DiceWorld" type="Node3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport"]
+
+[node name="Camera3D" type="Camera3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+transform = Transform3D(1, -8.35189e-23, -4.37114e-08, 4.37114e-08, 1.91069e-15, 1, 0, -1, 1.91069e-15, 0, 11.8914, 0)
+keep_aspect = 0
+cull_mask = 1
+doppler_tracking = 2
+current = true
+fov = 60.0
+size = 26.64
+far = 200.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 0, 0)
+
+[node name="Dice3d" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld" instance=ExtResource("15_hopnb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+input_capture_on_drag = true
+physics_material_override = SubResource("PhysicsMaterial_n0qs2")
+can_sleep = false
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 10
+FaceUpPath = NodePath("FaceUp")
+FaceDownPath = NodePath("FaceDown")
+FaceLeftPath = NodePath("FaceLeft")
+FaceRightPath = NodePath("FaceRight")
+FaceFrontPath = NodePath("FaceFront")
+FaceBackPath = NodePath("FaceBack")
+IconDepthEpsilon = 0.0
+IconUniformScale = 1.5
+FaceNoDepthTest = false
+
+[node name="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="1"]
+surface_material_override/0 = SubResource("StandardMaterial3D_fgjt8")
+
+[node name="FaceUp" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="2"]
+flip_h = true
+
+[node name="FaceDown" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="3"]
+flip_h = true
+
+[node name="FaceLeft" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="4"]
+flip_h = true
+
+[node name="FaceRight" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="5"]
+flip_h = true
+
+[node name="FaceFront" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="6"]
+flip_h = true
+
+[node name="FaceBack" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="7"]
+flip_h = true
+
+[node name="Node3D" type="Node3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d"]
+script = ExtResource("6_hopnb")
+EdgeThickness = 0.01
+EdgeColor = Color(1, 1, 1, 1)
+
+[node name="Ground" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+visible = false
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.14427, -0.1, 0.0631332)
+shape = SubResource("BoxShape3D_rkc8x")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Ground/CollisionShape3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.34853, 0)
+visible = false
+mesh = SubResource("BoxMesh_bm5eo")
+
+[node name="Wall" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.88022, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.41495, 6.42617, 1.42483)
+shape = SubResource("BoxShape3D_tx0v2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall/CollisionShape3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 3.09812, 0, -4.484, 0)
+mesh = SubResource("BoxMesh_fgjt8")
+
+[node name="Wall2" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.9605, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.2644, 6.47503, 1.5602)
+shape = SubResource("BoxShape3D_qvhcr")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall2/CollisionShape3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 3.08416, 0, -4.31717, 0)
+mesh = SubResource("BoxMesh_hopnb")
+
+[node name="Wall3" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -7.34738)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.166742, 6.47402, -0.118354)
+shape = SubResource("BoxShape3D_3815q")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall3/CollisionShape3D"]
+transform = Transform3D(1.34587, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.10216, 0)
+mesh = SubResource("BoxMesh_r8qb4")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6.76625)
+collision_layer = 15
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.828232, 6.4408, 0.693864)
+shape = SubResource("BoxShape3D_4eu3u")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/StaticBody3D/CollisionShape3D"]
+transform = Transform3D(1.32676, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.0545, 0)
+mesh = SubResource("BoxMesh_rkc8x")
+
+[node name="Ceiling" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 16.8442, 0)
+visible = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Ceiling"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.720985, -0.390612, 0.357834)
+shape = SubResource("BoxShape3D_fgjt8")
+
+[node name="DragAnchor" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/DragAnchor"]
+shape = SubResource("SphereShape3D_fgjt8")
+
+[node name="DiceSpawn" type="Node3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 0.5)
+visible = false
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/DiceSpawn"]
+mesh = SubResource("BoxMesh_tx0v2")
 
 [node name="PlayerSpawnsRoot" type="Node3D" parent="BattleRoot"]
+visible = false
 
 [node name="Spawn0" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
 
@@ -48,13 +264,24 @@ script = ExtResource("2_vt32t")
 
 [node name="Spawn3" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
 
-[node name="LogLabel" type="Label" parent="BattleRoot"]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
-script = ExtResource("3_ffosx")
+[node name="DiceDock" type="Control" parent="BattleRoot"]
+visible = false
+z_index = 1000
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 162.0
+offset_top = 415.0
+offset_right = -1068.0
+offset_bottom = -255.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+mouse_filter = 2
 
 [node name="Layout" type="VBoxContainer" parent="BattleRoot"]
+z_index = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -124,15 +351,18 @@ text = "ARM"
 layout_mode = 2
 mouse_filter = 2
 
-[node name="LogPanel" type="PanelContainer" parent="BattleRoot/Layout/LogRow"]
+[node name="BattleLogPanel" type="PanelContainer" parent="BattleRoot/Layout/LogRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
+script = ExtResource("4_n0qs2")
+LogLabelPath = NodePath("../BattleLogLabel")
 
-[node name="LogLabel" type="RichTextLabel" parent="BattleRoot/Layout/LogRow"]
+[node name="BattleLogLabel" type="RichTextLabel" parent="BattleRoot/Layout/LogRow"]
 custom_minimum_size = Vector2(0, 180)
 layout_mode = 2
 mouse_filter = 2
+scroll_following = true
 
 [node name="HeroRow" type="HBoxContainer" parent="BattleRoot/Layout"]
 layout_mode = 2
@@ -301,109 +531,48 @@ custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 stretch_mode = 5
 
-[node name="RollBtn" type="Button" parent="BattleRoot/Layout"]
-custom_minimum_size = Vector2(120, 32)
-layout_mode = 2
-size_flags_vertical = 4
-text = "ROLL"
-script = ExtResource("4_l7tus")
-PopupSpawnerPath = NodePath("../../RollPopupLayer")
-AnchorControlPath = NodePath("../HeroRow/HeroPanel1")
-DieText = "d6"
-Sides = 6
-CritOnMax = false
-FailOnMin = false
-
 [node name="RollPopupLayer" type="CanvasLayer" parent="BattleRoot"]
-script = ExtResource("4_ppc7m")
-RollPopupScene = ExtResource("5_l7tus")
+visible = false
 
-[node name="LoadoutToBattleBridge" type="Node" parent="." node_paths=PackedStringArray("Slot1", "Slot2", "Slot3", "Slot4", "Slot5", "Slot6", "Hero1ClassPortrait")]
+[node name="RollPopupSpawner" type="Control" parent="BattleRoot/RollPopupLayer"]
+top_level = true
+z_index = 100
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_ppc7m")
+RollPopupScene = ExtResource("7_ffosx")
+
+[node name="LoadoutToBattleBridge" type="Node" parent="."]
 unique_name_in_owner = true
 script = ExtResource("7_7vkth")
-Slot1 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot1")
-Slot2 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot2")
-Slot3 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot3")
-Slot4 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot4")
-Slot5 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot5")
-Slot6 = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot6")
-Hero1ClassPortrait = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout/ClassIconBig")
-DefensiveIcon = ExtResource("4_o8ewf")
+LoadoutScreenPath = NodePath("../LoadoutScreen")
+BattleRootPath = NodePath("../BattleRoot")
+HUDSlot0Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot1")
+HUDSlot1Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot2")
+HUDSlot2Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot3")
+HUDSlot3Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot4")
+HUDSlot4Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot5")
+HUDSlot5Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot6")
+Dice3DPath = NodePath("../BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d")
+DiceInteractorPath = NodePath("../BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld")
+DiceDockCardP1Path = NodePath("../BattleRoot/DiceDock")
 UpgradeIcon = ExtResource("5_aob1w")
+FallbackIcon = ExtResource("4_o8ewf")
 
 [node name="LoadoutScreen" parent="." instance=ExtResource("8_o8ewf")]
 layout_mode = 1
+BridgePath = NodePath("../LoadoutToBattleBridge")
 
-[node name="LayoutRoot" parent="LoadoutScreen" index="0"]
+[node name="MarginContainer" parent="LoadoutScreen" index="0"]
+offset_bottom = 75.0
 mouse_filter = 0
 
-[node name="PartySizeButtonContainer" parent="LoadoutScreen/LayoutRoot" index="0"]
-mouse_filter = 0
-
-[node name="HeaderRow" parent="LoadoutScreen/LayoutRoot" index="1"]
-mouse_filter = 0
-
-[node name="Spacer" parent="LoadoutScreen/LayoutRoot/HeaderRow" index="0"]
-mouse_filter = 2
-
-[node name="FinalizeBtn" parent="LoadoutScreen/LayoutRoot/HeaderRow" index="1"]
-z_index = 1
-
-[node name="MainRow" parent="LoadoutScreen/LayoutRoot" index="2"]
-mouse_filter = 2
-
-[node name="LeftPanel" parent="LoadoutScreen/LayoutRoot/MainRow" index="0"]
-mouse_filter = 2
-
-[node name="RightPanel" parent="LoadoutScreen/LayoutRoot/MainRow" index="1"]
-columns = 4
-
-[node name="PlayerLoadoutPanel" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="0"]
-ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
-Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
-Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
-LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
-UpgradeSlotScene = ExtResource("9_58i56")
-DefensiveSlotScene = ExtResource("10_ppc7m")
-
-[node name="PlayerNameLabel" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="0"]
-text = "Player 1"
-
-[node name="ClassSelectionContainer" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="2"]
-mouse_filter = 0
-
-[node name="LoadoutContainer" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="8"]
-size_flags_vertical = 3
-
-[node name="PlayerLoadoutPanel2" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="1"]
-ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
-Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
-Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
-LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
-UpgradeSlotScene = ExtResource("9_58i56")
-DefensiveSlotScene = ExtResource("10_ppc7m")
-
-[node name="PlayerLoadoutPanel3" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="2"]
-ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
-Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
-Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
-LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
-UpgradeSlotScene = ExtResource("9_58i56")
-DefensiveSlotScene = ExtResource("10_ppc7m")
-
-[node name="VBoxContainer" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel3/MarginContainer" index="0"]
-mouse_filter = 2
-
-[node name="PlayerLoadoutPanel4" parent="LoadoutScreen/LayoutRoot/MainRow/RightPanel" index="3"]
-ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
-Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
-Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
-LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
-UpgradeSlotScene = ExtResource("9_58i56")
-DefensiveSlotScene = ExtResource("10_ppc7m")
-
+[editable path="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d"]
+[editable path="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout/Header/HpBar"]
 [editable path="LoadoutScreen"]
-[editable path="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]
-[editable path="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel2"]
-[editable path="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel3"]
-[editable path="LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel4"]
+[editable path="LoadoutScreen/MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]

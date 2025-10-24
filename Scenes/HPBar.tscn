@@ -53,7 +53,7 @@ text = "20/20"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ProgressBar" type="ProgressBar" parent="."]
+[node name="ArmorFill" type="ProgressBar" parent="."]
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -65,7 +65,7 @@ theme_override_styles/background = SubResource("StyleBoxFlat_avp23")
 theme_override_styles/fill = SubResource("StyleBoxFlat_oy76q")
 show_percentage = false
 
-[node name="HPFill" type="ProgressBar" parent="."]
+[node name="HpFill" type="ProgressBar" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

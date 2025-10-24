@@ -1,7 +1,9 @@
-[gd_scene load_steps=36 format=3 uid="uid://da4ara70hfel6"]
+[gd_scene load_steps=38 format=3 uid="uid://da4ara70hfel6"]
 
 [ext_resource type="Script" uid="uid://3dl30nqf2gdc" path="res://Scripts/Godot/PlayerLoadoutPanel.cs" id="1_cno7r"]
 [ext_resource type="PackedScene" uid="uid://bxlmfrb7bijip" path="res://Scenes/IconTile.tscn" id="2_6bpwx"]
+[ext_resource type="PackedScene" uid="uid://yyf8aq04mcur" path="res://Scenes/UpgradeTile.tscn" id="2_dpc8d"]
+[ext_resource type="PackedScene" uid="uid://coig18xlcwjcp" path="res://Scenes/DefensiveTile.tscn" id="3_7pjq3"]
 [ext_resource type="Texture2D" uid="uid://c7kwmfuyslwwu" path="res://Content/Icons/Classes/Bard.png" id="3_yqggp"]
 [ext_resource type="Texture2D" uid="uid://1yegckio8l8a" path="res://Content/Icons/Classes/Judge.png" id="4_ni87e"]
 [ext_resource type="Texture2D" uid="uid://da26kw7mr4e1b" path="res://Content/Icons/Classes/King.png" id="5_dpc8d"]
@@ -37,17 +39,31 @@
 [ext_resource type="Script" uid="uid://djl1c0crm58bk" path="res://Scripts/Godot/IconTile.cs" id="35_yqggp"]
 
 [node name="PlayerLoadoutPanel" type="PanelContainer"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -565.5
+offset_right = 140.0
+offset_bottom = 565.5
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_horizontal = 4
+size_flags_vertical = 4
 script = ExtResource("1_cno7r")
+ClassSelectionContainerPath = NodePath("MarginContainer/VBoxContainer/ClassSelectionContainer")
+Tier1SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier1SpellContainer")
+Tier2SpellContainerPath = NodePath("MarginContainer/VBoxContainer/Tier2SpellContainer")
+LoadoutContainerPath = NodePath("MarginContainer/VBoxContainer/LoadoutContainer")
+UpgradeSlotScene = ExtResource("2_dpc8d")
+DefensiveSlotScene = ExtResource("3_7pjq3")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 4
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
@@ -55,6 +71,7 @@ theme_override_constants/margin_bottom = 8
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
+size_flags_horizontal = 0
 theme_override_constants/separation = 8
 
 [node name="PlayerNameLabel" type="Label" parent="MarginContainer/VBoxContainer"]
@@ -68,8 +85,8 @@ clip_text = true
 [node name="ClassSelectionContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_horizontal = 6
+size_flags_vertical = 4
 columns = 5
 
 [node name="Barbarian" parent="MarginContainer/VBoxContainer/ClassSelectionContainer" instance=ExtResource("2_6bpwx")]
@@ -138,8 +155,8 @@ text = "Tier 1 Spell (Max 2):"
 [node name="Tier1SpellContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_horizontal = 6
+size_flags_vertical = 4
 columns = 3
 
 [node name="attack" parent="MarginContainer/VBoxContainer/Tier1SpellContainer" instance=ExtResource("2_6bpwx")]
@@ -209,8 +226,8 @@ text = "Tier 2 Spell (Max 1):"
 [node name="Tier2SpellContainer" type="GridContainer" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_horizontal = 6
+size_flags_vertical = 4
 columns = 2
 
 [node name="attackplus" parent="MarginContainer/VBoxContainer/Tier2SpellContainer" instance=ExtResource("2_6bpwx")]
@@ -296,23 +313,23 @@ layout_mode = 2
 text = "Loadout:"
 
 [node name="LoadoutContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 64)
+custom_minimum_size = Vector2(360, 64)
 layout_mode = 2
+size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_constants/separation = 8
 
 [node name="L0" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
-custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 disabled = true
 toggle_mode = true
 flat = true
+expand_icon = true
 script = ExtResource("35_yqggp")
 
 [node name="L1" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
-custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -322,7 +339,6 @@ flat = true
 script = ExtResource("35_yqggp")
 
 [node name="L2" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
-custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -332,7 +348,6 @@ flat = true
 script = ExtResource("35_yqggp")
 
 [node name="L3" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
-custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -342,7 +357,6 @@ flat = true
 script = ExtResource("35_yqggp")
 
 [node name="L4" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
-custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -352,7 +366,6 @@ flat = true
 script = ExtResource("35_yqggp")
 
 [node name="L5" type="Button" parent="MarginContainer/VBoxContainer/LoadoutContainer"]
-custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4

@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://dswtic4py86sq" path="res://Content/Icons/UpgradeIcon.png" id="1_xf8mq"]
 
 [node name="UpgradeTile" type="TextureRect"]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(32, 32)
 offset_right = 143.0
 offset_bottom = 72.0
 size_flags_horizontal = 4

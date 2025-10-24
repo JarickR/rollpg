@@ -13,107 +13,191 @@ grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_rgomp")
+CardsRootPath = NodePath("MarginContainer/LayoutRoot/MainRow/RightPanel")
+PartyButtonsRootPath = NodePath("MarginContainer/LayoutRoot/PartySizeButtonContainer")
+FinalizeButtonPath = NodePath("MarginContainer/LayoutRoot/HeaderRow/FinalizeBtn")
 
-[node name="LayoutRoot" type="VBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 268.0
-offset_bottom = 103.0
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
-[node name="PartySizeButtonContainer" type="HBoxContainer" parent="LayoutRoot"]
+[node name="LayoutRoot" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="LayoutRoot/PartySizeButtonContainer"]
-custom_minimum_size = Vector2(64, 64)
+[node name="PartySizeButtonContainer" type="HBoxContainer" parent="MarginContainer/LayoutRoot"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="MarginContainer/LayoutRoot/PartySizeButtonContainer"]
 layout_mode = 2
 toggle_mode = true
 text = "1"
 
-[node name="Button2" type="Button" parent="LayoutRoot/PartySizeButtonContainer"]
-custom_minimum_size = Vector2(64, 64)
+[node name="Button2" type="Button" parent="MarginContainer/LayoutRoot/PartySizeButtonContainer"]
 layout_mode = 2
 toggle_mode = true
 text = "2"
 
-[node name="Button3" type="Button" parent="LayoutRoot/PartySizeButtonContainer"]
-custom_minimum_size = Vector2(64, 64)
+[node name="Button3" type="Button" parent="MarginContainer/LayoutRoot/PartySizeButtonContainer"]
 layout_mode = 2
 toggle_mode = true
 text = "3"
 
-[node name="Button4" type="Button" parent="LayoutRoot/PartySizeButtonContainer"]
-custom_minimum_size = Vector2(64, 64)
+[node name="Button4" type="Button" parent="MarginContainer/LayoutRoot/PartySizeButtonContainer"]
 layout_mode = 2
 toggle_mode = true
 text = "4"
 
-[node name="HeaderRow" type="HBoxContainer" parent="LayoutRoot"]
+[node name="HeaderRow" type="HBoxContainer" parent="MarginContainer/LayoutRoot"]
 layout_mode = 2
 
-[node name="Spacer" type="Control" parent="LayoutRoot/HeaderRow"]
+[node name="Spacer" type="Control" parent="MarginContainer/LayoutRoot/HeaderRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="FinalizeBtn" type="Button" parent="LayoutRoot/HeaderRow"]
+[node name="FinalizeBtn" type="Button" parent="MarginContainer/LayoutRoot/HeaderRow"]
 layout_mode = 2
 text = "Finalize"
 
-[node name="MainRow" type="HBoxContainer" parent="LayoutRoot"]
+[node name="MainRow" type="HBoxContainer" parent="MarginContainer/LayoutRoot"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="LeftPanel" type="GridContainer" parent="LayoutRoot/MainRow"]
-visible = false
+[node name="RightPanel" type="GridContainer" parent="MarginContainer/LayoutRoot/MainRow"]
 layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Class" type="Label" parent="LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-text = "Class"
-
-[node name="ClassSelectionContainer" type="GridContainer" parent="LayoutRoot/MainRow/LeftPanel"]
-custom_minimum_size = Vector2(64, 64)
-layout_mode = 2
-columns = 5
-
-[node name="Tier 1 Spells (Pick 2)" type="Label" parent="LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-text = "Tier 1 Spells (Pick 2)"
-
-[node name="Tier1SpellContainer" type="GridContainer" parent="LayoutRoot/MainRow/LeftPanel"]
-custom_minimum_size = Vector2(64, 64)
-layout_mode = 2
-theme_override_constants/h_separation = 8
-columns = 3
-
-[node name="Tier 2 Spells (Pick 2)2" type="Label" parent="LayoutRoot/MainRow/LeftPanel"]
-layout_mode = 2
-text = "Tier 2 Spells (Pick 2)"
-
-[node name="Tier2SpellContainer" type="GridContainer" parent="LayoutRoot/MainRow/LeftPanel"]
-custom_minimum_size = Vector2(64, 64)
-layout_mode = 2
-theme_override_constants/h_separation = 8
-columns = 2
-
-[node name="RightPanel" type="GridContainer" parent="LayoutRoot/MainRow"]
-layout_mode = 2
-size_flags_horizontal = 3
 size_flags_vertical = 3
-columns = 2
 
-[node name="PlayerLoadoutPanel" parent="LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
+[node name="PlayerLoadoutPanel" parent="MarginContainer/LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
 layout_mode = 2
 
-[node name="PlayerLoadoutPanel2" parent="LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
-layout_mode = 2
+[node name="VBoxContainer" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer" index="0"]
+size_flags_horizontal = 4
 
-[node name="PlayerLoadoutPanel3" parent="LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
-layout_mode = 2
+[node name="Barbarian" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="0"]
+custom_minimum_size = Vector2(32, 32)
 
-[node name="PlayerLoadoutPanel4" parent="LayoutRoot/MainRow/RightPanel" instance=ExtResource("4_kxik3")]
-layout_mode = 2
+[node name="Bard" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="1"]
+custom_minimum_size = Vector2(32, 32)
 
-[editable path="LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]
-[editable path="LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel2"]
-[editable path="LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel3"]
-[editable path="LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel4"]
+[node name="Judge" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="2"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="King" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="3"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="Lich" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="4"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="Paladin" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="5"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="Tank" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="6"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="Thief" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="7"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="Vampire" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="8"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="Warden" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/ClassSelectionContainer" index="9"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="attack" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="0"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="chainlightning" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="1"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="cragshot" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="2"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="fireball" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="3"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="freeze" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="4"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="heal" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="5"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="shield" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="6"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="spikedshield" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="7"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="stab" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="8"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="sweep" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer" index="9"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="attackplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="0"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="bomb" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="1"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="chainlightningplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="2"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="concentration" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="3"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="cragshotplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="4"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="fireballplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="5"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="freezeplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="6"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="healplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="7"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="poison" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="8"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="shieldplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="9"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="spikedshieldplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="10"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="stabplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="11"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="sweepplus" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer" index="12"]
+custom_minimum_size = Vector2(32, 32)
+
+[node name="LoadoutContainer" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer" index="8"]
+size_flags_vertical = 3
+
+[node name="L0" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/LoadoutContainer" index="0"]
+custom_minimum_size = Vector2(24, 24)
+
+[node name="L1" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/LoadoutContainer" index="1"]
+custom_minimum_size = Vector2(24, 24)
+
+[node name="L2" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/LoadoutContainer" index="2"]
+custom_minimum_size = Vector2(24, 24)
+
+[node name="L3" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/LoadoutContainer" index="3"]
+custom_minimum_size = Vector2(24, 24)
+
+[node name="L4" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/LoadoutContainer" index="4"]
+custom_minimum_size = Vector2(24, 24)
+
+[node name="L5" parent="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/LoadoutContainer" index="5"]
+custom_minimum_size = Vector2(24, 24)
+
+[editable path="MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]
