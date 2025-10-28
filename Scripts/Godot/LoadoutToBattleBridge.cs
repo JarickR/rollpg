@@ -20,7 +20,7 @@ namespace DiceArena.Godot
 		[Export] public NodePath HUDSlot5Path { get; set; } = "BattleRoot/HUDLayer/HUDRow/Slot6";
 
 		// Dice / overlay references
-		[Export] public NodePath? DiceOverlayPath    { get; set; } = "DiceOverlay"; // NEW: direct overlay control
+		[Export] public NodePath? DiceOverlayPath    { get; set; } = "DiceOverlay"; // direct overlay control
 		[Export] public NodePath? Dice3DPath         { get; set; } = "DiceOverlay/DiceViewport/DiceWorld/Dice3d";
 		[Export] public NodePath? DiceInteractorPath { get; set; } = "DiceOverlay"; // node with DiceInteractor
 		[Export] public NodePath? DiceDockCardP1Path { get; set; } = null;
@@ -32,7 +32,7 @@ namespace DiceArena.Godot
 		private CanvasItem _battleRoot= default!;
 		private readonly List<Control> _hudSlots = new();
 
-		private Control?        _diceOverlay;      // NEW
+		private Control?        _diceOverlay;
 		private Dice3D?         _dice;
 		private DiceInteractor? _diceInteractor;
 
@@ -53,9 +53,9 @@ namespace DiceArena.Godot
 			_dice           = GetNodeOrNull<Dice3D>(Dice3DPath ?? "");
 			_diceInteractor = GetNodeOrNull<DiceInteractor>(DiceInteractorPath ?? "");
 
-			// Force overlay hidden on Loadout (and non-blocking), regardless of interactor.
+			// Force overlay hidden on Loadout (and non-blocking), regardless of interactor init order.
 			_diceInteractor?.EnableDice(false);
-			SetDiceOverlayVisible(false);             // <— NEW hard toggle
+			SetDiceOverlayVisible(false);
 			CallDeferred(nameof(HideDiceOverlayDeferred));
 
 			ShowLoadout();
@@ -64,7 +64,7 @@ namespace DiceArena.Godot
 		private void HideDiceOverlayDeferred()
 		{
 			_diceInteractor?.EnableDice(false);
-			SetDiceOverlayVisible(false);             // <— NEW
+			SetDiceOverlayVisible(false);
 		}
 
 		// Hard toggle overlay visibility + input blocking in one place
@@ -138,7 +138,7 @@ namespace DiceArena.Godot
 			_battleRoot.ProcessMode = ProcessModeEnum.Disabled;
 
 			_diceInteractor?.EnableDice(false);
-			SetDiceOverlayVisible(false); // NEW
+			SetDiceOverlayVisible(false);
 
 			GD.Print("[Bridge] State=LOADOUT (battle hidden).");
 		}
@@ -152,7 +152,9 @@ namespace DiceArena.Godot
 			_battleRoot.ProcessMode = ProcessModeEnum.Inherit;
 
 			_diceInteractor?.EnableDice(true);
-			SetDiceOverlayVisible(true); // NEW
+
+			// NEW: force the overlay to be visible & centered so we can verify it renders
+			_diceInteractor?.ForceShowCentered(360);
 
 			GD.Print("[Bridge] State=BATTLE (battle visible).");
 		}

@@ -6,18 +6,14 @@ using System.Collections.Generic;
 
 namespace DiceArena.Godot
 {
-	/// Pick-up / hover-drag at fixed height, cursor-centric tumble,
-	/// and a velocity-based throw + spin on release.
-	/// Attach this script to a plain Node (host), not the SubViewportContainer.
-	/// Point OverlayPath at your SubViewportContainer (e.g. "DiceOverlay").
 	public partial class DiceInteractor : Node
 	{
-		// ----- Inspector Paths (set these to your actual nodes) -----
-		[Export] public NodePath OverlayPath  { get; set; } = "DiceOverlay";                                // -> SubViewportContainer
-		[Export] public NodePath ViewportPath { get; set; } = "DiceOverlay/DiceViewport";                    // -> SubViewport
-		[Export] public NodePath CamPath      { get; set; } = "DiceOverlay/DiceViewport/DiceWorld/Camera3D"; // -> Camera3D inside the SubViewport
-		[Export] public NodePath DicePath     { get; set; } = "DiceOverlay/DiceViewport/DiceWorld/Dice3d";   // -> RigidBody3D (the dice)
-		[Export] public NodePath DefaultDockCardPath { get; set; } = "";                                     // optional UI Control to dock under
+		// ----- Inspector Paths -----
+		[Export] public NodePath OverlayPath  { get; set; } = "DiceOverlay";                                
+		[Export] public NodePath ViewportPath { get; set; } = "DiceOverlay/DiceViewport";                    
+		[Export] public NodePath CamPath      { get; set; } = "DiceOverlay/DiceViewport/DiceWorld/Camera3D"; 
+		[Export] public NodePath DicePath     { get; set; } = "DiceOverlay/DiceViewport/DiceWorld/Dice3d";   
+		[Export] public NodePath DefaultDockCardPath { get; set; } = "";
 
 		// ----- Tunables -----
 		[Export] public bool  AutoShowOnPlay          { get; set; } = true;
@@ -28,14 +24,18 @@ namespace DiceArena.Godot
 		[Export(PropertyHint.Range, "0,2,0.05")]      public float PickupNudgeTorque { get; set; } = 0.25f;
 		[Export(PropertyHint.Range, "2,20,1")]        public int   VelocitySampleFrames { get; set; } = 6;
 		[Export(PropertyHint.Range, "0.5,10,0.1")]    public float DragMaxRadius { get; set; } = 6f;
-		[Export] public bool RequireRayHitToDrag { get; set; } = true;
-		[Export] public bool VerboseLogs         { get; set; } = false;
 
-		// Cursor-centric tumble
+		[Export] public bool VerboseLogs { get; set; } = true;
+		[Export] public bool RequireRayHitToDrag_Editor { get; set; } = false;
+
+		// NEW: preferred square size when docking under a UI card
+		[Export(PropertyHint.Range, "160,800,10")] public int DockSize { get; set; } = 360;
+
+		// Cursor tumble
 		[Export(PropertyHint.Range, "0.0005,0.02,0.0005")] public float SpinRadiansPerPixel { get; set; } = 0.006f;
 		[Export(PropertyHint.Range, "2,40,0.5")]           public float AngularFollowRate   { get; set; } = 18f;
 		[Export(PropertyHint.Range, "0,2,0.01")]           public float CenterBias          { get; set; } = 0.35f;
-		[Export] public bool RequireRayHitToDrag { get; set; } = false; // was true
+
 		// ----- Runtime refs -----
 		private SubViewportContainer _overlay = default!;
 		private SubViewport          _vp      = default!;
@@ -47,55 +47,74 @@ namespace DiceArena.Godot
 		private Vector3 _dragTarget;
 		private readonly Queue<Vector3> _posSamples = new();
 
+		// runtime flag: allow drag even if ray miss (easy testing)
+		private bool _requireRayHitToDrag = false;
+
 		public override void _Ready()
 		{
-			// Fetch nodes
 			_overlay = GetNode<SubViewportContainer>(OverlayPath);
 			_vp      = GetNode<SubViewport>(ViewportPath);
 			_cam     = GetNode<Camera3D>(CamPath);
 			_dice    = GetNode<RigidBody3D>(DicePath);
 
-			// SubViewport basics
-			_vp.TransparentBg = true; // overlay on UI (set UpdateMode/ClearMode in Inspector)
+			_requireRayHitToDrag = false;
 
-			// Ensure overlay receives mouse events and is on top
-			_overlay.MouseFilter = Control.MouseFilterEnum.Stop;
-			_overlay.FocusMode   = Control.FocusModeEnum.All;
-			_overlay.TopLevel    = true;
-			_overlay.ZIndex      = 1000;
+			// ---- SubViewport & container config ----
+			_overlay.TopLevel      = true;
+			_overlay.ZIndex        = 1000;
+			_overlay.Stretch       = true;     // viewport fills container
+			_overlay.StretchShrink = 1;
 
-			// Keep SubViewport pixels in sync with container size (no stretching)
-			_overlay.Stretch = false;
+			_vp.TransparentBg = true;
+			EnsureViewportConfigured();
 			EnsureOverlaySized();
 			SyncViewportToOverlay();
 			_overlay.Resized += OnOverlayResized;
 
-			// Camera framing consistency
+			// Camera
 			_cam.KeepAspect = Camera3D.KeepAspectEnum.Width;
+			_cam.Current    = true;
 
-			// RigidBody defaults good for interaction
+			// Dice body
 			_dice.ContinuousCd = true;
 			_dice.CanSleep     = false;
 			_dice.Freeze       = false;
+			_dice.GravityScale = 2f;
 
-			// START HIDDEN and NON-BLOCKING
-			_overlay.Visible = false;
-			_overlay.MouseFilter = Control.MouseFilterEnum.Ignore;     // don't intercept clicks when hidden
-			_overlay.ProcessMode = ProcessModeEnum.Disabled;           // don't tick while hidden
+			// Start hidden & non-blocking
+			_overlay.Visible     = false;
+			_overlay.MouseFilter = Control.MouseFilterEnum.Ignore;
+			_overlay.ProcessMode = ProcessModeEnum.Disabled;
+			_vp.GuiDisableInput  = true;
 
 			_overlay.GuiInput += OnOverlayGuiInput;
+
+			if (VerboseLogs)
+				GD.Print($"[DiceInteractor] Ready. overlay={_overlay.GetPath()} vp={_vp.GetPath()} cam={_cam.GetPath()} dice={_dice.GetPath()}");
 
 			if (AutoShowOnPlay)
 			{
 				EnableDice(true);
 				SpawnAtCenterAndWake();
-				if (VerboseLogs) GD.Print("[DiceInteractor] Auto-show: overlay visible, dice spawned and awake.");
+				if (VerboseLogs) GD.Print("[DiceInteractor] Auto-show enabled.");
 			}
-
-			_dice.GravityScale = 2f;
 
 			SetProcess(false);
 			SetPhysicsProcess(true);
+		}
+
+		// Configure SubViewport so it renders 3D as an overlay.
+		private void EnsureViewportConfigured()
+		{
+			_vp.Disable3D = false;
+			if (_vp.World3D == null)
+				_vp.World3D = GetTree().Root.World3D;
+
+			_vp.RenderTargetUpdateMode = SubViewport.UpdateMode.Always;
+			_vp.RenderTargetClearMode  = SubViewport.ClearMode.Never;
+
+			if (VerboseLogs)
+				GD.Print($"[DiceInteractor] VP cfg -> disable3D={_vp.Disable3D}, update={_vp.RenderTargetUpdateMode}, clear={_vp.RenderTargetClearMode}, size={_vp.Size}");
 		}
 
 		public override void _PhysicsProcess(double delta)
@@ -104,20 +123,22 @@ namespace DiceArena.Godot
 			{
 				var cur  = _dice.GlobalTransform.Origin;
 				var next = cur.Lerp(_dragTarget, (float)delta * HoverFollowSpeed);
-
 				var t = _dice.GlobalTransform;
 				t.Origin = next;
 				_dice.GlobalTransform = t;
-
 				SamplePosition(next);
 			}
 		}
 
-		// ----- SubViewport sizing helpers -----
 		private void SyncViewportToOverlay()
 		{
 			Vector2 sz = _overlay.Size;
-			_vp.Size = new Vector2I(Mathf.RoundToInt(sz.X), Mathf.RoundToInt(sz.Y));
+			var want = new Vector2I(Mathf.RoundToInt(sz.X), Mathf.RoundToInt(sz.Y));
+			if (_vp.Size != want)
+			{
+				_vp.Size = want;
+				if (VerboseLogs) GD.Print($"[DiceInteractor] SyncViewportToOverlay -> vp={_vp.Size}, overlay={want}");
+			}
 		}
 		private void OnOverlayResized() => SyncViewportToOverlay();
 
@@ -134,12 +155,15 @@ namespace DiceArena.Godot
 		// ================= Public API =================
 		public void EnableDice(bool on)
 		{
-			_overlay.Visible = on;
+			_overlay.Visible     = on;
 			_overlay.MouseFilter = on ? Control.MouseFilterEnum.Stop : Control.MouseFilterEnum.Ignore;
-			_overlay.ProcessMode = on ? ProcessModeEnum.Inherit : ProcessModeEnum.Disabled;
+			_overlay.ProcessMode = on ? ProcessModeEnum.Inherit     : ProcessModeEnum.Disabled;
+			_vp.GuiDisableInput  = !on;
+
+			if (on) EnsureViewportConfigured();
 
 			if (VerboseLogs)
-				GD.Print($"[DiceInteractor] EnableDice({on}) → Visible={_overlay.Visible}, MouseFilter={_overlay.MouseFilter}, ProcessMode={_overlay.ProcessMode}");
+				GD.Print($"[DiceInteractor] EnableDice({on}) → Visible={_overlay.Visible}, MouseFilter={_overlay.MouseFilter}, ProcessMode={_overlay.ProcessMode}, GuiDisableInput={_vp.GuiDisableInput}");
 		}
 
 		public void SpawnAtCenterAndWake()
@@ -147,7 +171,6 @@ namespace DiceArena.Godot
 			var t = _dice.GlobalTransform;
 			t.Origin = new Vector3(0f, LiftHeight, 0f);
 			_dice.GlobalTransform = t;
-
 			_dice.LinearVelocity  = Vector3.Zero;
 			_dice.AngularVelocity = Vector3.Zero;
 			_dice.Sleeping        = false;
@@ -161,39 +184,74 @@ namespace DiceArena.Godot
 			_dice.Sleeping        = false;
 		}
 
-		/// Show/position the dice overlay under a UI card (Control) without reparenting.
+		/// Show/position the dice overlay under a UI card and clamp to screen.
 		public void AppearUnderCard(Control card, int pixelsBelow = 8)
 		{
 			EnsureOverlaySized();
+			EnsureViewportConfigured();
+
+			// prefer a predictable size when docking
+			_overlay.Size = new Vector2I(DockSize, DockSize);
 			SyncViewportToOverlay();
 
 			var r = card.GetGlobalRect();
 			float x = r.Position.X + r.Size.X * 0.5f - _overlay.Size.X * 0.5f;
 			float y = r.Position.Y + r.Size.Y + pixelsBelow;
 
-			_overlay.GlobalPosition = new Vector2I(Mathf.RoundToInt(x), Mathf.RoundToInt(y));
-			EnableDice(true); // make sure it’s visible and interactive
+			// Clamp to visible viewport so we never go off-screen again
+			var vr = GetViewport().GetVisibleRect();
+			int maxX = Mathf.Max(0, Mathf.RoundToInt(vr.Size.X) - _overlay.Size.X);
+			int maxY = Mathf.Max(0, Mathf.RoundToInt(vr.Size.Y) - _overlay.Size.Y);
+			int cx = Mathf.Clamp(Mathf.RoundToInt(x), 0, maxX);
+			int cy = Mathf.Clamp(Mathf.RoundToInt(y), 0, maxY);
 
-			if (VerboseLogs) GD.Print($"[DiceInteractor] AppearUnderCard -> pos={_overlay.GlobalPosition}, size={_overlay.Size}");
+			_overlay.GlobalPosition = new Vector2I(cx, cy);
+			EnableDice(true);
+
+			if (VerboseLogs)
+				GD.Print($"[DiceInteractor] AppearUnderCard pos=({cx},{cy}) size={_overlay.Size} vr={vr.Size}");
 		}
 
 		public void DockToDefaultCard(int pixelsBelow = 8)
 		{
 			if (string.IsNullOrEmpty(DefaultDockCardPath)) return;
 			var card = GetNodeOrNull<Control>(DefaultDockCardPath);
-			if (card == null)
-			{
-				GD.PushWarning($"[DiceInteractor] DefaultDockCardPath not found: '{DefaultDockCardPath}'.");
-				return;
-			}
+			if (card == null) { GD.PushWarning($"[DiceInteractor] DefaultDockCardPath not found: '{DefaultDockCardPath}'."); return; }
 			AppearUnderCard(card, pixelsBelow);
 		}
 
 		public void HideDice() => EnableDice(false);
 
+		/// Utility to force-show in the center for quick debugging.
+		public void ForceShowCentered(int px = 360)
+		{
+			EnsureViewportConfigured();
+
+			_overlay.Visible     = true;
+			_overlay.MouseFilter = Control.MouseFilterEnum.Stop;
+			_overlay.ProcessMode = ProcessModeEnum.Inherit;
+			_vp.GuiDisableInput  = false;
+
+			_overlay.TopLevel = true;
+			_overlay.ZIndex   = 1000;
+
+			var size = new Vector2I(px, px);
+			_overlay.Size = size;
+
+			var vr  = GetViewport().GetVisibleRect();
+			var pos = (vr.Size - (Vector2)size) * 0.5f + vr.Position;
+			_overlay.GlobalPosition = new Vector2I(Mathf.RoundToInt(pos.X), Mathf.RoundToInt(pos.Y));
+
+			SyncViewportToOverlay();
+
+			if (VerboseLogs)
+				GD.Print($"[DiceInteractor] ForceShowCentered → pos={_overlay.GlobalPosition}, size={_overlay.Size}, vp={_vp.Size}");
+		}
+
 		// ================= Input / Dragging =================
 		private void OnOverlayGuiInput(InputEvent e)
 		{
+			if (VerboseLogs) GD.Print($"[DiceInteractor] GuiInput → {e.GetType().Name}");
 			if (!_overlay.Visible) return;
 
 			if (e is InputEventMouseButton mb && mb.ButtonIndex == MouseButton.Left)
@@ -201,12 +259,9 @@ namespace DiceArena.Godot
 				if (mb.Pressed)
 				{
 					bool hit = RayHitsDice(mb.Position);
-					if (VerboseLogs) GD.Print($"[DiceInteractor] LMB down. RayHitsDice={hit}");
-
-					if (hit || !RequireRayHitToDrag)
+					if (VerboseLogs) GD.Print($"[DiceInteractor] LMB down. RayHitsDice={hit}, RequireHit={_requireRayHitToDrag}");
+					if (hit || !_requireRayHitToDrag)
 						BeginDrag(mb.Position);
-					else if (VerboseLogs)
-						GD.Print("[DiceInteractor] Click ignored (RequireRayHitToDrag=true and no hit).");
 				}
 				else
 				{
@@ -224,7 +279,7 @@ namespace DiceArena.Godot
 				var v2 = mm.Velocity;
 				float speed = v2.Length();
 
-				var camBasis   = _cam.GlobalTransform.Basis;
+				var camBasis    = _cam.GlobalTransform.Basis;
 				Vector3 camRight   = camBasis.X;
 				Vector3 camForward = -camBasis.Z;
 				Vector3 moveWorld  = (camRight * v2.X) + (camForward * v2.Y);

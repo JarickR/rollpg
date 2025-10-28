@@ -90,47 +90,50 @@ ClassIconPath = NodePath("../LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerL
 T1IconPath = NodePath("../LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier1SpellContainer")
 T2IconPath = NodePath("../LoadoutScreen/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel/MarginContainer/VBoxContainer/Tier2SpellContainer")
 
-[node name="DiceInteractorHost" type="Node" parent="BattleRoot"]
-script = ExtResource("4_fgjt8")
-DicePath = NodePath("DiceOverlay/DiceViewport/DiceWorld")
-DefaultDockCardPath = NodePath("../DiceDock")
-RequireRayHitToDrag = false
-VerboseLogs = true
-
-[node name="DiceOverlay" type="SubViewportContainer" parent="BattleRoot/DiceInteractorHost"]
-top_level = true
-z_index = 1000
+[node name="Layout" type="VBoxContainer" parent="BattleRoot"]
+z_index = 1
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="DiceOverlay" type="SubViewportContainer" parent="BattleRoot/Layout"]
+top_level = true
+z_index = 1001
+layout_mode = 2
+size_flags_vertical = 3
 mouse_filter = 0
 script = ExtResource("4_hopnb")
 
-[node name="DiceViewport" type="SubViewport" parent="BattleRoot/DiceInteractorHost/DiceOverlay"]
+[node name="DiceViewport" type="SubViewport" parent="BattleRoot/Layout/DiceOverlay"]
 process_mode = 3
 transparent_bg = true
 handle_input_locally = false
 size = Vector2i(1280, 720)
+render_target_clear_mode = 1
 render_target_update_mode = 4
 
-[node name="DiceWorld" type="Node3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport"]
+[node name="DiceWorld" type="Node3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport"]
 
-[node name="Camera3D" type="Camera3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="Camera3D" type="Camera3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 transform = Transform3D(1, -8.35189e-23, -4.37114e-08, 4.37114e-08, 1.91069e-15, 1, 0, -1, 1.91069e-15, 0, 11.8914, 0)
 keep_aspect = 0
 cull_mask = 1
 doppler_tracking = 2
+projection = 1
 current = true
 fov = 60.0
-size = 26.64
+size = 26.675
 far = 200.0
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 transform = Transform3D(1, 0, 0, 0, 0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 0, 0)
 
-[node name="Dice3d" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld" instance=ExtResource("15_hopnb")]
+[node name="Dice3d" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld" instance=ExtResource("15_hopnb")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 input_capture_on_drag = true
 physics_material_override = SubResource("PhysicsMaterial_n0qs2")
@@ -146,150 +149,110 @@ FaceFrontPath = NodePath("FaceFront")
 FaceBackPath = NodePath("FaceBack")
 IconDepthEpsilon = 0.0
 IconUniformScale = 1.5
-FaceNoDepthTest = false
 
-[node name="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="1"]
+[node name="MeshInstance3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="1"]
 surface_material_override/0 = SubResource("StandardMaterial3D_fgjt8")
 
-[node name="FaceUp" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="2"]
+[node name="FaceUp" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="2"]
 flip_h = true
 
-[node name="FaceDown" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="3"]
+[node name="FaceDown" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="3"]
 flip_h = true
 
-[node name="FaceLeft" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="4"]
+[node name="FaceLeft" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="4"]
 flip_h = true
 
-[node name="FaceRight" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="5"]
+[node name="FaceRight" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="5"]
 flip_h = true
 
-[node name="FaceFront" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="6"]
+[node name="FaceFront" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="6"]
 flip_h = true
 
-[node name="FaceBack" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="7"]
+[node name="FaceBack" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d" index="7"]
 flip_h = true
 
-[node name="Node3D" type="Node3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d"]
+[node name="Node3D" type="Node3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d"]
 script = ExtResource("6_hopnb")
 EdgeThickness = 0.01
 EdgeColor = Color(1, 1, 1, 1)
 
-[node name="Ground" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
-visible = false
+[node name="Ground" type="StaticBody3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 collision_layer = 3
 collision_mask = 3
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Ground"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Ground"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.14427, -0.1, 0.0631332)
 shape = SubResource("BoxShape3D_rkc8x")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Ground/CollisionShape3D"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Ground/CollisionShape3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.34853, 0)
 visible = false
 mesh = SubResource("BoxMesh_bm5eo")
 
-[node name="Wall" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="Wall" type="StaticBody3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.88022, 0, 0)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Wall"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.41495, 6.42617, 1.42483)
 shape = SubResource("BoxShape3D_tx0v2")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall/CollisionShape3D"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Wall/CollisionShape3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 3.09812, 0, -4.484, 0)
 mesh = SubResource("BoxMesh_fgjt8")
 
-[node name="Wall2" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="Wall2" type="StaticBody3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.9605, 0, 0)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall2"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Wall2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -17.2644, 6.47503, 1.5602)
 shape = SubResource("BoxShape3D_qvhcr")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall2/CollisionShape3D"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Wall2/CollisionShape3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 3.08416, 0, -4.31717, 0)
 mesh = SubResource("BoxMesh_hopnb")
 
-[node name="Wall3" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="Wall3" type="StaticBody3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -7.34738)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall3"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Wall3"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.166742, 6.47402, -0.118354)
 shape = SubResource("BoxShape3D_3815q")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Wall3/CollisionShape3D"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Wall3/CollisionShape3D"]
 transform = Transform3D(1.34587, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.10216, 0)
 mesh = SubResource("BoxMesh_r8qb4")
 
-[node name="StaticBody3D" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="StaticBody3D" type="StaticBody3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 6.76625)
 collision_layer = 15
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/StaticBody3D"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/StaticBody3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.828232, 6.4408, 0.693864)
 shape = SubResource("BoxShape3D_4eu3u")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/StaticBody3D/CollisionShape3D"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/StaticBody3D/CollisionShape3D"]
 transform = Transform3D(1.32676, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4.0545, 0)
 mesh = SubResource("BoxMesh_rkc8x")
 
-[node name="Ceiling" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="Ceiling" type="StaticBody3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 16.8442, 0)
 visible = false
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Ceiling"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Ceiling"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.720985, -0.390612, 0.357834)
 shape = SubResource("BoxShape3D_fgjt8")
 
-[node name="DragAnchor" type="StaticBody3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="DragAnchor" type="StaticBody3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/DragAnchor"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/DragAnchor"]
 shape = SubResource("SphereShape3D_fgjt8")
 
-[node name="DiceSpawn" type="Node3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld"]
+[node name="DiceSpawn" type="Node3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 0.5)
 visible = false
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/DiceSpawn"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/DiceSpawn"]
 mesh = SubResource("BoxMesh_tx0v2")
-
-[node name="PlayerSpawnsRoot" type="Node3D" parent="BattleRoot"]
-visible = false
-
-[node name="Spawn0" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
-
-[node name="Spawn1" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
-
-[node name="Spawn2" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
-
-[node name="Spawn3" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
-
-[node name="DiceDock" type="Control" parent="BattleRoot"]
-visible = false
-z_index = 1000
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 162.0
-offset_top = 415.0
-offset_right = -1068.0
-offset_bottom = -255.0
-grow_horizontal = 2
-grow_vertical = 2
-size_flags_vertical = 3
-mouse_filter = 2
-
-[node name="Layout" type="VBoxContainer" parent="BattleRoot"]
-z_index = 1
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/separation = 12
 
 [node name="EnemyRow" type="HBoxContainer" parent="BattleRoot/Layout"]
 layout_mode = 2
@@ -531,6 +494,36 @@ custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
 stretch_mode = 5
 
+[node name="DiceInteractorHost" type="Node" parent="BattleRoot"]
+script = ExtResource("4_fgjt8")
+OverlayPath = NodePath("../Layout/DiceOverlay")
+ViewportPath = NodePath("../Layout/DiceOverlay/DiceViewport")
+CamPath = NodePath("../Layout/DiceOverlay/DiceViewport/DiceWorld/Camera3D")
+DicePath = NodePath("../Layout/DiceOverlay/DiceViewport/DiceWorld")
+DefaultDockCardPath = NodePath("../DiceDock")
+
+[node name="PlayerSpawnsRoot" type="Node3D" parent="BattleRoot"]
+visible = false
+
+[node name="Spawn0" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
+
+[node name="Spawn1" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
+
+[node name="Spawn2" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
+
+[node name="Spawn3" type="Node3D" parent="BattleRoot/PlayerSpawnsRoot"]
+
+[node name="DiceDock" type="Control" parent="BattleRoot"]
+z_index = 1000
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
 [node name="RollPopupLayer" type="CanvasLayer" parent="BattleRoot"]
 visible = false
 
@@ -558,8 +551,9 @@ HUDSlot2Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/H
 HUDSlot3Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot4")
 HUDSlot4Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot5")
 HUDSlot5Path = NodePath("../BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HUDRow/Slot6")
-Dice3DPath = NodePath("../BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d")
-DiceInteractorPath = NodePath("../BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld")
+DiceOverlayPath = NodePath("../BattleRoot/Layout/DiceOverlay")
+Dice3DPath = NodePath("../BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d")
+DiceInteractorPath = NodePath("../BattleRoot/DiceInteractorHost")
 DiceDockCardP1Path = NodePath("../BattleRoot/DiceDock")
 UpgradeIcon = ExtResource("5_aob1w")
 FallbackIcon = ExtResource("4_o8ewf")
@@ -569,10 +563,16 @@ layout_mode = 1
 BridgePath = NodePath("../LoadoutToBattleBridge")
 
 [node name="MarginContainer" parent="LoadoutScreen" index="0"]
-offset_bottom = 75.0
+offset_top = -37.5
+offset_right = -894.0
+offset_bottom = 37.5
 mouse_filter = 0
 
-[editable path="BattleRoot/DiceInteractorHost/DiceOverlay/DiceViewport/DiceWorld/Dice3d"]
+[node name="PartySizeButtonContainer" parent="LoadoutScreen/MarginContainer/LayoutRoot" index="0"]
+size_flags_horizontal = 0
+size_flags_vertical = 0
+
+[editable path="BattleRoot/Layout/DiceOverlay/DiceViewport/DiceWorld/Dice3d"]
 [editable path="BattleRoot/Layout/HeroRow/HeroPanel1/VBoxContainer/HeroPanelLayout/Header/HpBar"]
 [editable path="LoadoutScreen"]
 [editable path="LoadoutScreen/MarginContainer/LayoutRoot/MainRow/RightPanel/PlayerLoadoutPanel"]
